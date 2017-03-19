@@ -1,0 +1,14 @@
+\documentclass[12pt]{report}
+
+\begin{document}
+The primary aim of my dissertation was to investigate how Convolutional Neural Networks can be used in biomedical imaging tasks, more specifically the task of brain tumour segmentation. This has been done by investigating some of the more recent state-of-the-art convolutional neural network and deep learning techniques used in this area.
+
+In the first phase of my project, I have replicated the methods used in the paper published by Pereira et al. \cite{pereira}. The technique used in this paper is to classify voxels individually using only its surrounding patch of size 33x33 pixels in the axial plane. The proposed convolutional neural network consists of 11 layers, the last 3 of which are fully connected and aim to classify using the features learned from the first 8 convolutional layers. I was able to replicate the published results (obtaining 90\%) in the `Complete' and `Core' regions, however failing to replicate the published results in the `Enhancing' region. Although, not entirely certain why there is a discrepancy between the results, it is likely that this difference was caused by the parameters used in the preprocessing steps, parameters that unfortunately have not been published with the paper.
+
+In a second phase, I used the method published by Havaei et al. \cite{havaei}, which used a novel double pathway architecture to neural networks. Also novel in this approach is that the training is done in two distinct phases: First, the network is trained on training patches sampled from an equiprobable distribution. Second, the network is further trained by using training patches randomly sampled from the training data.
+
+Finally, during the last phase of my project, I was able to experiment with modifying the architecture of the convolutional neural network. More specifically, I trained a fully convolutional neural network, which as opposed to the previous models doesn't have any fully connected layers, and thus allows the network to be deeper while keeping the number of weights low. This finally allowed me to increase the input patch size from 33x33 voxels to models taking in patches of 64x64 and 128x128 voxels. For now (I am still experimenting with this), the results obtained using these architectures are lower than those obtained during the first and second phase.
+
+The data preprocessing steps were all implemented in Python 3 and the models were built using the Keras library. The data used during this project was the data offered as part of the BraTS 2013 and BraTS 2015. The 2013 dataset consists of 20 high-grade glioma patients with ground-truth determined by domain experts. For each patient there are 4 scans available consisting of 240x240x155 voxels, taken using different MRI modalities: T1, T1c, T2 and Flair. The 2015 dataset consists of over 200 high-grade glioma patients, which I used mainly as validation data.
+
+\end{document}

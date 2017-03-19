@@ -2,9 +2,43 @@
 \documentclass[12pt,a4paper,twoside,openright]{report}
 \usepackage[pdfborder={0 0 0}]{hyperref}    % turns references into hyperlinks
 \usepackage[margin=25mm]{geometry}  % adjusts page layout
-\usepackage{graphicx}  % allows inclusion of PDF, PNG and JPG images
+% allows inclusion of PDF, PNG and JPG images
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{bbm} %Used for the indicator function
+\graphicspath{ {figs/} }
+
 \usepackage{verbatim}
 \usepackage{docmute}   % only needed to allow inclusion of proposal.tex
+
+
+\usepackage{listings} % Package to display code and customize highlighting
+\usepackage{color}
+ 
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+ 
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+\lstset{style=mystyle} % Set code listings style
 
 \raggedbottom                           % try to avoid widows and orphans
 \sloppy
@@ -25,14 +59,14 @@
 
 \pagestyle{empty}
 
-\rightline{\LARGE \textbf{Martin Richards}}
+\rightline{\LARGE \textbf{Sebastian Borgeaud dit Avocat}}
 
 \vspace*{60mm}
 \begin{center}
 \Huge
-\textbf{How to write a dissertation in \LaTeX} \\[5mm]
+\textbf{Brain tumour segmentation using Convolutional Neural Networks} \\[5mm]
 Computer Science Tripos -- Part II \\[5mm]
-St John's College \\[5mm]
+Fitzwilliam College \\[5mm]
 \today  % today's date
 \end{center}
 
@@ -117,264 +151,112 @@ appreciated.
 
 \pagestyle{headings}
 
-\chapter{Introduction}
+\chapter{Introduction [14\%]}
+Convolutional Neural Networks have gained an enormous amount of traction in recent years, as they have been used in many different areas to obtain state-of-the-art results. The areas of computer vision and biomedical imaging analysis are no exception to this and the number of entries using Convolutional Neural Networks in the BraTS [CITATION] challenge has risen accordingly, with some of these entries being at the top of the evaluation board.
 
-\section{Overview of the files}
+\chapter{Preparation [26\%]}
+During the first phase of my project, the aim was to replicate the method used by Pereira et al \cite{pereira}, so it was crucial to first fully understand the steps taken in the paper to then be able to reimplement them. Unfortunately, the paper didn't include any source code which meant that if something wasn't fully explained in details, I would have to find out what was actually done. This turned out to be a problem for the pre-processing step as the proposed method uses a normalisation developed by Nyul [CITATION]. This normalisation requires human input, preferably from a domain expert, and I was therefore not able to use that normalisation method. The paper also proposed a second normalisation method, which used a combination of winsorizing and N4 normalization. This method performed slightly worse but had the advantage of being fully automated, which is why I chose to use this method.\\
 
-This document consists of the following files:
+\section{Convolutional Neural Networks}
+\subsubsection{Neural networks}
+To understand how convolutional neural networks work, it is important to be familiar with ordinary neural networks. These are made up of layers of neurons that have trainable weights in a sequence of layers. An example of the structure of such a neural network can be found in figure \ref{fig:nn_layout}.
+\begin{figure}
+	\centering
+	\includegraphics[scale=0.6]{nn_layout}
+	\caption{Structure of a simple neural network with two hidden layers.}
+	\label{fig:nn_layout}
+\end{figure}
 
+Each neuron in layer $n+1$ is connected to every neuron in layer $n$ and computes as an output
+\[y = f_{act}((\sum_{i=1}^{n} y_i w_i) + b)\]
+where $f_{act}$ is a non-linear, differentiable activation function and $y_i$ is the output of neuron $i$ in the previous layer. A neuron is connected to every neuron in the previous layer, which is why this layer is also referred to as a fully connected layer.
+\subsubsection{Activation functions}
+The most common activation functions are the Sigmoid function,
+\[S(x) = \frac{1}{1 + e^x}\] the hyperbolic tangent 
+\[\textrm{tanh}(x)=\frac{e^x - e^{-x}}{e^x + e^{-x}}\] the rectifier 
+\[
+f(x) = 
+\begin{cases}
+	0 & \text{if } x < 0\\
+	x & \text{otherwise}
+\end{cases}
+\]
+and the leaky rectifier, for some $0 < \alpha < 1$
+\[
+f(x) = 
+\begin{cases}
+	\alpha x & \text{if } x < 0\\
+	x & \text{otherwise}
+\end{cases}
+\]
+This functions can be seen in figure \ref{fig:activation_functions}
+\begin{figure}
+	\centering
+	\includegraphics[scale=0.6]{activations}
+	\caption{Plot of 4 different activation functions.}
+	\label{fig:activation_functions}
+\end{figure}
+Historically the hyperbolic tangent function or the sigmoid function have been used as activation functions. However, as the magnitude of the gradients of those functions is always below 1, these activation function create a problem of vanishing gradients for deeper networks, as we have to multiply those gradients together for each layer. [CITATIONS!!!!] This is why it is now preferred to use the rectifier or the leaky rectifier functions.
+[PLOT OF FUNCTIONS]
+\subsubsection{Loss function}
+The next step is to compute how well our network approximates our training data with a loss function, to then decide how to change the weights of the network in order to minimise the loss. Since the aim of the network is to classify the central pixel(s) of the patch, we use the categorical cross-entropy loss function
+\begin{equation}
+	\mathcal{L}(\theta) = 
+	\frac{1}{m}\Big[\sum_{i=1}^m \sum_{j=1}^k\mathbbm{1}[y^{(i)} = k]\log(P(y^{(i)}=k \mid x^{(i)};\theta))\Big]
+\end{equation}
+where $\mathbbm{1}$ is the indicator function, $\log(P(y^{(i)}=k \mid x^{(i)};\theta))$ is the probability outputted by the network.
+\subsubsection{Backpropagation}
+Since every basic operation used in the neural network is differentiable, the entire network will also be differentiable, which in turn makes it possible to calculate the gradient of a loss function with respect to the weights in the network. This then will allow us to minimise this loss function by using a gradient descent approach.
+
+\subsubsection{SGD}
+
+\subsubsection{Momentum}
+\subsubsection{Further optimizations}
+\subsection{Adding convolutions}
+Convolutional neural networks are similar to ordinary neural networks, sometimes also called artificial neural networks. Convolutional neural networks are also made up for neurons that have trainable weights. The main difference is that
+\subsection{Dropout}
+\subsection{Batch Normalization}
+
+\section{Data pre-processing}
+\subsection{N4ITK}
+\subsection{Patch extraction}
+
+\section{Data source}
+
+\chapter{Implementation [40\%]}
+\section{CNN models}
+I implemented the convolutional neural networks using the Keras (Add reference) library, which allows users to create neural networks by combining different layers together. The more common layers come as part of the library but Keras allows the user to define layers as well.  The architecture proposed by Pereira et al \cite{pereira} used the following layers:
 \begin{itemize}
-\item \texttt{makefile} --- The makefile for the dissertation and
-                         Project Proposal
-\item \texttt{diss.tex} --- The dissertation
-\item \texttt{proposal.tex}  --- The project proposal 
-\item \texttt{figs} -- A directory containing diagrams and pictures
-\item \texttt{refs.bib} --- The bibliography database
+	\item two-dimensional convolutional layers
+	\item fully connected layers
+	\item two-dimensional max pooling layers
 \end{itemize}
+Futhermore, we can easily add Dropout to the model by adding an instance of a Dropout layer where required. 
 
-\section{Building the document}
+My implementation of the model proposed by Pereira \cite{pereira} looks as follows in Keras:
+\lstinputlisting[language=Python, firstline=24, lastline=60]{../Work/model.py}
 
-This document was produced using \LaTeXe which is based upon
-\LaTeX\cite{Lamport86}.  To build the document you first need to
-generate \texttt{diss.aux} which, amongst other things, contains the
-references used.  This if done by executing the command:
+This makes it easy to create deep, convolutional networks and to experiment with them. This reason, together with the active community of Keras users is why I chose to use the Keras library.
 
-\texttt{pdflatex diss}
+Before training the models, we further need to specify which loss function and which algorithm should be used to respectively specify and minimise the loss function. Again, keras makes this very simple:
+\lstinputlisting[language=Python, firstline=71, lastline=72]{../Work/model.py}
 
-\noindent
-Then the bibliography can be generated from \texttt{refs.bib} using:
+\section{Data preprocessing}
 
-\texttt{bibtex diss}
+\section{Training}
 
-\noindent
-Finally, to ensure all the page numbering is correct run \texttt{pdflatex}
-on \texttt{diss.tex} until the \texttt{.aux} files do not change.  This
-usually takes 2 more runs.
+\section{Segmentation}
 
-\subsection{The makefile}
+\chapter{Evaluation + Conclusion [20\%]}
 
-To simplify the calls to \texttt{pdflatex} and \texttt{bibtex}, 
-a makefile has been provided, see Appendix~\ref{makefile}. 
-It provides the following facilities:
+\section{Metrics used for the evaluation}
+\subsection{Dice score}
+\subsection{Positive predictive value}
+\subsection{Sensitivity}
 
-\begin{description}
-
-\item\texttt{make} \\
- Display help information.
-
-\item\texttt{make proposal.pdf} \\
- Format the proposal document as a PDF.
-
-\item\texttt{make view-proposal} \\
- Run \texttt{make proposal.pdf} and then display it with a Linux PDF viewer
- (preferably ``okular'', if that is not available fall back to ``evince'').
-
-\item\texttt{make diss.pdf} \\
- Format the dissertation document as a PDF.
-
-\item\texttt{make count} \\
-Display an estimate of the word count.
-
-\item\texttt{make all} \\
-Construct \texttt{proposal.pdf} and \texttt{diss.pdf}.
-
-\item\texttt{make pub} \\ Make \texttt{diss.pdf}
-and place it in my \texttt{public\_html} directory.
-
-\item\texttt{make clean} \\ Delete all intermediate files except the
-source files and the resulting PDFs. All these deleted files can
-be reconstructed by typing \texttt{make all}.
-
-\end{description}
-
-
-\section{Counting words}
-
-An approximate word count of the body of the dissertation may be
-obtained using:
-
-\texttt{wc diss.tex}
-
-\noindent
-Alternatively, try something like:
-
-\verb/detex diss.tex | tr -cd '0-9A-Z a-z\n' | wc -w/
-
-
-\chapter{Preparation}
-
-This chapter is empty!
-
-
-\chapter{Implementation}
-
-\section{Verbatim text}
-
-Verbatim text can be included using \verb|\begin{verbatim}| and
-\verb|\end{verbatim}|. I normally use a slightly smaller font and
-often squeeze the lines a little closer together, as in:
-
-{\renewcommand{\baselinestretch}{0.8}\small
-\begin{verbatim}
-GET "libhdr"
- 
-GLOBAL { count:200; all  }
- 
-LET try(ld, row, rd) BE TEST row=all
-                        THEN count := count + 1
-                        ELSE { LET poss = all & ~(ld | row | rd)
-                               UNTIL poss=0 DO
-                               { LET p = poss & -poss
-                                 poss := poss - p
-                                 try(ld+p << 1, row+p, rd+p >> 1)
-                               }
-                             }
-LET start() = VALOF
-{ all := 1
-  FOR i = 1 TO 12 DO
-  { count := 0
-    try(0, 0, 0)
-    writef("Number of solutions to %i2-queens is %i5*n", i, count)
-    all := 2*all + 1
-  }
-  RESULTIS 0
-}
-\end{verbatim}
-}
-
-\section{Tables}
-
-\begin{samepage}
-Here is a simple example\footnote{A footnote} of a table.
-
-\begin{center}
-\begin{tabular}{l|c|r}
-Left      & Centred & Right \\
-Justified &         & Justified \\[3mm]
-%\hline\\%[-2mm]
-First     & A       & XXX \\
-Second    & AA      & XX  \\
-Last      & AAA     & X   \\
-\end{tabular}
-\end{center}
-
-\noindent
-There is another example table in the proforma.
-\end{samepage}
-
-\section{Simple diagrams}
-
-Simple diagrams can be written directly in \LaTeX.  For example, see
-figure~\ref{latexpic1} on page~\pageref{latexpic1} and see
-figure~\ref{latexpic2} on page~\pageref{latexpic2}.
-
-\begin{figure}
-\setlength{\unitlength}{1mm}
-\begin{center}
-\begin{picture}(125,100)
-\put(0,80){\framebox(50,10){AAA}}
-\put(0,60){\framebox(50,10){BBB}}
-\put(0,40){\framebox(50,10){CCC}}
-\put(0,20){\framebox(50,10){DDD}}
-\put(0,00){\framebox(50,10){EEE}}
-
-\put(75,80){\framebox(50,10){XXX}}
-\put(75,60){\framebox(50,10){YYY}}
-\put(75,40){\framebox(50,10){ZZZ}}
-
-\put(25,80){\vector(0,-1){10}}
-\put(25,60){\vector(0,-1){10}}
-\put(25,50){\vector(0,1){10}}
-\put(25,40){\vector(0,-1){10}}
-\put(25,20){\vector(0,-1){10}}
-
-\put(100,80){\vector(0,-1){10}}
-\put(100,70){\vector(0,1){10}}
-\put(100,60){\vector(0,-1){10}}
-\put(100,50){\vector(0,1){10}}
-
-\put(50,65){\vector(1,0){25}}
-\put(75,65){\vector(-1,0){25}}
-\end{picture}
-\end{center}
-\caption{A picture composed of boxes and vectors.}
-\label{latexpic1}
-\end{figure}
-
-\begin{figure}
-\setlength{\unitlength}{1mm}
-\begin{center}
-
-\begin{picture}(100,70)
-\put(47,65){\circle{10}}
-\put(45,64){abc}
-
-\put(37,45){\circle{10}}
-\put(37,51){\line(1,1){7}}
-\put(35,44){def}
-
-\put(57,25){\circle{10}}
-\put(57,31){\line(-1,3){9}}
-\put(57,31){\line(-3,2){15}}
-\put(55,24){ghi}
-
-\put(32,0){\framebox(10,10){A}}
-\put(52,0){\framebox(10,10){B}}
-\put(37,12){\line(0,1){26}}
-\put(37,12){\line(2,1){15}}
-\put(57,12){\line(0,2){6}}
-\end{picture}
-
-\end{center}
-\caption{A diagram composed of circles, lines and boxes.}
-\label{latexpic2}
-\end{figure}
-
-
-
-\section{Adding more complicated graphics}
-
-The use of \LaTeX\ format can be tedious and it is often better to use
-encapsulated postscript (EPS) or PDF to represent complicated graphics.
-Figure~\ref{epsfig} and~\ref{xfig} on page \pageref{xfig} are
-examples. The second figure was drawn using \texttt{xfig} and exported in
-{\tt.eps} format. This is my recommended way of drawing all diagrams.
-
-
-\begin{figure}[tbh]
-\centerline{\includegraphics{figs/cuarms.pdf}}
-\caption{Example figure using encapsulated postscript}
-\label{epsfig}
-\end{figure}
-
-\begin{figure}[tbh]
-\vspace{4in}
-\caption{Example figure where a picture can be pasted in}
-\label{pastedfig}
-\end{figure}
-
-
-\begin{figure}[tbh]
-\centerline{\includegraphics{figs/diagram.pdf}}
-\caption{Example diagram drawn using \texttt{xfig}}
-\label{xfig}
-\end{figure}
-
-
-\chapter{Evaluation}
-
-\section{Printing and binding}
-
-Use a ``duplex'' laser printer that can print on both sides to print
-two copies of your dissertation. Then bind them, for example using the
-comb binder in the Computer Laboratory Library.
-
-\section{Further information}
-
-See the Unix Tools notes at
-
-\url{http://www.cl.cam.ac.uk/teaching/current-1/UnixTools/materials.html}
-
+\section{Evaluation of the model proposed by Pereira et al.}
+\section{Evaluation of the my model}
+\section{Comparison}
 
 \chapter{Conclusion}
 
@@ -389,27 +271,27 @@ been helpful and saved you time.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % the appendices
-\appendix
-
-\chapter{Latex source}
-
-\section{diss.tex}
-{\scriptsize\verbatiminput{diss.tex}}
-
-\section{proposal.tex}
-{\scriptsize\verbatiminput{proposal.tex}}
-
-\chapter{Makefile}
-
-\section{makefile}\label{makefile}
-{\scriptsize\verbatiminput{makefile.txt}}
-
-\section{refs.bib}
-{\scriptsize\verbatiminput{refs.bib}}
-
-
-\chapter{Project Proposal}
-
-\input{proposal}
+%\appendix
+%
+%\chapter{Latex source}
+%
+%\section{diss.tex}
+%{\scriptsize\verbatiminput{diss.tex}}
+%
+%%\section{proposal.tex}
+%{\scriptsize\verbatiminput{proposal.tex}}
+%
+%\chapter{Makefile}
+%
+%\section{makefile}\label{makefile}
+%{\scriptsize\verbatiminput{makefile.txt}}
+%
+%\section{refs.bib}
+%{\scriptsize\verbatiminput{refs.bib}}
+%
+%
+%\chapter{Project Proposal}
+%
+%%\input{proposal}
 
 \end{document}
