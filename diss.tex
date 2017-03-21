@@ -5,6 +5,8 @@
 % allows inclusion of PDF, PNG and JPG images
 \usepackage{graphicx}
 \usepackage{amsmath}
+\usepackage{amssymb}
+
 \usepackage{bbm} %Used for the indicator function
 \graphicspath{ {figs/} }
 
@@ -79,14 +81,13 @@ Fitzwilliam College \\[5mm]
 
 {\large
 \begin{tabular}{ll}
-Name:               & \bf Martin Richards                       \\
-College:            & \bf St John's College                     \\
-Project Title:      & \bf How to write a dissertation in \LaTeX \\
-Examination:        & \bf Computer Science Tripos -- Part II, July 2001  \\
-Word Count:         & \bf 1587\footnotemark[1]
-                      (well less than the 12000 limit)  \\
-Project Originator: & Dr M.~Richards                    \\
-Supervisor:         & Dr Markus Kuhn                    \\ 
+Name:               & \bf Sebastian Borgeaud dit Avocat                       \\
+College:            & \bf Fitzwilliam College                     \\
+Project Title:      & \bf Brain tumour segmentation using Convolutional Neural Networks \LaTeX \\
+Examination:        & \bf Computer Science Tripos -- Part II, June 2017  \\
+Word Count:         & \bf INSERT  \\
+Project Originator: & Duo Wang                    \\
+Supervisor:         & Dr. Mateja Jamnik \& Duo Wang                    \\ 
 \end{tabular}
 }
 \footnotetext[1]{This word count was computed
@@ -94,36 +95,10 @@ by \texttt{detex diss.tex | tr -cd '0-9A-Za-z $\tt\backslash$n' | wc -w}
 }
 \stepcounter{footnote}
 
-
-\section*{Original Aims of the Project}
-
-To write a demonstration dissertation\footnote{A normal footnote without the
-complication of being in a table.} using \LaTeX\ to save
-student's time when writing their own dissertations. The dissertation
-should illustrate how to use the more common \LaTeX\ constructs. It
-should include pictures and diagrams to show how these can be
-incorporated into the dissertation.  It should contain the entire
-\LaTeX\ source of the dissertation and the makefile.  It should
-explain how to construct an MSDOS disk of the dissertation in
-Postscript format that can be used by the book shop for printing, and,
-finally, it should have the prescribed layout and format of a diploma
-dissertation.
-
-
-\section*{Work Completed}
-
-All that has been completed appears in this dissertation.
-
-\section*{Special Difficulties}
-
-Learning how to incorporate encapulated postscript into a \LaTeX\
-document on both Ubuntu Linux and OS X.
- 
 \newpage
 \section*{Declaration}
 
-I, [Name] of [College], being a candidate for Part II of the Computer
-Science Tripos [or the Diploma in Computer Science], hereby declare
+I, Sebastian Borgeaud dit Avocat of Fitzwilliam College, being a candidate for Part II of the Computer Science Tripos, hereby declare
 that this dissertation and the work described in it are my own work,
 unaided except as may be specified below, and that the dissertation
 does not contain material that has already been used to any substantial
@@ -152,14 +127,29 @@ appreciated.
 \pagestyle{headings}
 
 \chapter{Introduction [14\%]}
-Convolutional Neural Networks have gained an enormous amount of traction in recent years, as they have been used in many different areas to obtain state-of-the-art results. The areas of computer vision and biomedical imaging analysis are no exception to this and the number of entries using Convolutional Neural Networks in the BraTS [CITATION] challenge has risen accordingly, with some of these entries being at the top of the evaluation board.
+\section{Motivation}
+\begin{itemize}
+	\item Motivation for choosing this problem: Openly available data, important problem (include count of people affected by brain tumours)
+	\item Then motivate the choice of conv nets to tackle this problem.
+	\item Also mention that this is an opportunity for me to explore the field of ML further and gain some practical experience working in that field.
+\end{itemize}
+
+\section{Related Work}
+\begin{itemize}
+	\item Here I will introduce the previous work done. In particular, this should contain a short intro to the history of neural nets and conv nets. Then a brief history of the brain tumour segmentation problem.
+	\item Next mention the main paper \cite{pereira} and the BraTS challenge/conference.
+	\item Mention more recent developments, such as the usage of ResNets.
+	\item This paragraph should introduce the reader to the problem and to what has been done previously.
+\end{itemize}
 
 \chapter{Preparation [26\%]}
 During the first phase of my project, the aim was to replicate the method used by Pereira et al \cite{pereira}, so it was crucial to first fully understand the steps taken in the paper to then be able to reimplement them. Unfortunately, the paper didn't include any source code which meant that if something wasn't fully explained in details, I would have to find out what was actually done. This turned out to be a problem for the pre-processing step as the proposed method uses a normalisation developed by Nyul [CITATION]. This normalisation requires human input, preferably from a domain expert, and I was therefore not able to use that normalisation method. The paper also proposed a second normalisation method, which used a combination of winsorizing and N4 normalization. This method performed slightly worse but had the advantage of being fully automated, which is why I chose to use this method.\\
 
-\section{Convolutional Neural Networks}
-\subsubsection{Neural networks}
-To understand how convolutional neural networks work, it is important to be familiar with ordinary neural networks. These are made up of layers of neurons that have trainable weights in a sequence of layers. An example of the structure of such a neural network can be found in figure \ref{fig:nn_layout}.
+\section{Starting point}
+
+\section{Theoretical background}
+\subsection{Artificial Neural networks}
+To understand how convolutional neural networks work, it is important to be familiar with ordinary neural networks. These are made up from a sequence of layers of neurons, each neuron having a set of trainable weights that can be adjusted to change the overall function computed by the neural network. An example of the structure of such a neural network can be found in figure \ref{fig:nn_layout}.
 \begin{figure}
 	\centering
 	\includegraphics[scale=0.6]{nn_layout}
@@ -189,42 +179,122 @@ f(x) =
 	x & \text{otherwise}
 \end{cases}
 \]
-This functions can be seen in figure \ref{fig:activation_functions}
+This functions can be seen plotted in figure \ref{fig:activation_functions}. 
 \begin{figure}
 	\centering
 	\includegraphics[scale=0.6]{activations}
-	\caption{Plot of 4 different activation functions.}
+	\caption{Plot of the activation functions.}
 	\label{fig:activation_functions}
 \end{figure}
-Historically the hyperbolic tangent function or the sigmoid function have been used as activation functions. However, as the magnitude of the gradients of those functions is always below 1, these activation function create a problem of vanishing gradients for deeper networks, as we have to multiply those gradients together for each layer. [CITATIONS!!!!] This is why it is now preferred to use the rectifier or the leaky rectifier functions.
-[PLOT OF FUNCTIONS]
+Historically, the hyperbolic tangent function or the sigmoid function have been used as activation functions. However, as the magnitude of the gradients of those functions is always below 1, these activation function create a problem of vanishing gradients for deeper networks, as we have to multiply those gradients together for each layer. [CITATIONS!!!!] This is why it is nowadays preferred to use the rectifier or the leaky rectifier functions, especially with deeper architectures.
+
+In a classification problem, the output layer will consist of $K$ nodes, one for each class. Using a softmax activation function for the last layer, we can view the output of node $k$ as the probability $P(y^{(i)} = k \mid \mathbf{x}^{(i)};\theta)$ since the the output of each neuron will range between 0 and 1 and the sum of all outputs will be 1. The softmax activation computes for each output $k$
+\begin{equation}
+	\sigma(\mathbf{x})_k = \frac{e^{\mathbf{x}_k}}{\sum_{j=1}^{K}e^{\mathbf{x}_j}}
+\end{equation}
+where $\mathbf{x}$ is the vector consisting of all outputs from the previous layer.
+
 \subsubsection{Loss function}
 The next step is to compute how well our network approximates our training data with a loss function, to then decide how to change the weights of the network in order to minimise the loss. Since the aim of the network is to classify the central pixel(s) of the patch, we use the categorical cross-entropy loss function
 \begin{equation}
+	\label{eq:loss}
 	\mathcal{L}(\theta) = 
-	\frac{1}{m}\Big[\sum_{i=1}^m \sum_{j=1}^k\mathbbm{1}[y^{(i)} = k]\log(P(y^{(i)}=k \mid x^{(i)};\theta))\Big]
+	\frac{1}{m}\Big[\sum_{i=1}^m \sum_{j=1}^k\mathbbm{1}[y^{(i)} = k]\log(P(y^{(i)}=k \mid \mathbf{x}^{(i)};\theta))\Big]
 \end{equation}
 where $\mathbbm{1}$ is the indicator function, $\log(P(y^{(i)}=k \mid x^{(i)};\theta))$ is the probability outputted by the network.
-\subsubsection{Backpropagation}
-Since every basic operation used in the neural network is differentiable, the entire network will also be differentiable, which in turn makes it possible to calculate the gradient of a loss function with respect to the weights in the network. This then will allow us to minimise this loss function by using a gradient descent approach.
 
-\subsubsection{SGD}
+\subsubsection{Optimisation}
+The next step is to calculate the gradient $\dfrac{d\mathcal{L}(\theta)}{d\theta}$, so that we can apply gradient descent and update our weight vector to
+\begin{equation}
+	\theta = \theta - \epsilon \frac{d\mathcal{L}(\theta)}{d\theta}
+\end{equation}
+where $\epsilon$ is the learning rate, a small positive value.
+
+Since every basic operation used in the neural network is differentiable, the entire network will also be differentiable, which in turn makes it possible to calculate the gradient of a loss function with respect to the weights in the network. This process is called backpropagation.
+
+The loss functions, as described in equation \ref{eq:loss} is computed using the entire training data set $\mathbb{X} = \{(\mathbf{x}^{(1)},y^{(1)}), ...,(\mathbf{x}^{(m)},y^{(m)})\}$. In the case of deep learning where it is usual to have a very large training data set, this would be very memory costly and slow down the training phase unnecessarily. Therefore, stochastic gradient descent is used instead, where we process the training data sequentially in batches, each time computing the loss for that batch and updating the weights.
 
 \subsubsection{Momentum}
-\subsubsection{Further optimizations}
-\subsection{Adding convolutions}
-Convolutional neural networks are similar to ordinary neural networks, sometimes also called artificial neural networks. Convolutional neural networks are also made up for neurons that have trainable weights. The main difference is that
-\subsection{Dropout}
-\subsection{Batch Normalization}
+A further optimisation used to speed up the training process is momentum update. Minimising the loss function can be interpreted as moving a small particle down a hilly terrain in the hyper-dimensional space defined by the loss function. Since the gradient is related to the force experienced by that particle, this suggest that the gradient should only influence the velocity vector and not the position directly. This leads to the velocity update
+\begin{equation}
+	v = \mu  v - \epsilon \frac{d\mathcal{L}(\theta)}{d\theta}
+\end{equation}
+where $\mu$ is the momentum, typically set to 0.9. We then update our weights by simply adding the velocity to the current value.
+\begin{equation}
+	\theta = \theta + v
+\end{equation}
 
-\section{Data pre-processing}
-\subsection{N4ITK}
-\subsection{Patch extraction}
+Typically a slightly different version, called the Nesterov momentum, is used as it has been shown to work better in practice[CITATION].
+
+\subsubsection{Further optimizations}
+Should I explain adam optimisation??
+
+\subsection{Convolutional neural networks}
+Convolutional neural networks are different as they make the explicit assumption that the inputs will be images. This allows us to take advantage of some properties to make the forward function more effective and greatly reduce the number of weights in our network. 
+
+A typical convolutional network constists of three types of layers: \textbf{convolutional layers}, \textbf{pooling layers} and \textbf{fully-connected layers}. 
+\subsubsection{Fully-connected layers}
+These are exactly the same as for ordinary neural networks.
+
+\subsubsection{Convolutional layers}
+Unlike a fully-connected layer, a convolutional layer is typically three-dimensional: widht, height and depth. The parameters of a layer are a set of learnable filters, each spatially small along the width and height but with the depth equal to the depth of input volume. The layer then computes a two-dimensional activation map by convolving the filter with the input and computing the dot product at each point. This means that the function learned by a filter is space-invariant, as the filter is convolved with the entire input. Each filter computes such a two-dimensional activation map that can then be stacked along the depth axis to produce the output volume.
+
+The connectivity pattern is inspired by the organization of the animal visual cortex. Individual neurons respond to stimuli in a small region of space known as the \textbf{receptive field}. Every element in the output can then be interpreted as the output of a neuron whose receptive field is the width and height of the filter and who shares its weights with all its neighbours to the left and right spatially.
+
+The size of the output volume is determined by three hyperparameters.
+\begin{enumerate}
+	\item The \textbf{depth} corresponds to the number of filters in the layer and is therefore equal to the depth of the output volume.
+	\item The \textbf{stride} which determines by how many pixels we slide the filter. When the stride is greater than 1 the output width and height will be smaller than the input width and height.
+	\item The \textbf{padding} determines with how many zeros we pad the input width and height. This is particularly useful when we want to preserve the input dimensions.
+\end{enumerate}
+The computation done by such a filter in shown in figure \ref{fig:conv_example}.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=0.6]{conv_example}
+	\caption[Example computation done by a 3x3 filter in a convolutional layer]{Example computation done by a 3x3 filter in a convolutional layer. Both the stride and the padding are 1, so as to keep the output dimensions identical. The output at depth 0 for the marked element is $1 \cdot 1 + 2 \cdot 0 + 4 \cdot 1 + 3 \cdot 0 + 3 \cdot -1 + 4 \cdot -1 + 2 \cdot 1 + 3 \cdot -1 + 4 \cdot 1 = 1$ and similarly at depth 1 the output for that element is -3.}
+	\label{fig:conv_example}
+\end{figure}
+
+\subsubsection{Pooling layers}
+The function of the pooling layer is to reduce the spatial size of the input layer in order to reduce the number of parameters and computation in the network. The most common pooling layer implementation is the \textbf{max-pooling} which just convolves a two-dimensional maximum operator of a given size, typically 2x2. The \textbf{stride} again determines the step size.
+\newline
+
+A convolutional neural network typically consists of a sequence of these layers, starting with pairs of convolutional neural networks and max pooling layers. The idea behind this is that each pair can learn more and more abstract features using the features learned by the previous layer. For example, the first pair might learn to recognise edges, the second layer shapes, etc.. The last few layers of the network then consist entirely of fully-connected layers. These learn how to classify the data using the features learned by the convolutional and max pooling layers.
+
+\subsection{The overfitting problem}
+A common problem to arise in neural networks is that of \textbf{overfitting}, i.e.\ when the model isn't able to generalise and instead just memorises the training data. Due to the large number of weights in convolutional neural networks, this problem occurs frequently when using them. Many techniques and heuristics have been developed in order to help reduce overfitting. In particular, I used three of them: \textbf{L2 weight normalisation}, \textbf{Dropout} and \textbf{Batch Normalisation}
+\subsubsection{L2 weight normalisation}
+\subsubsection{Dropout}
+\subsubsection{Batch Normalisation}
 
 \section{Data source}
+\subsection{BraTS Challenge}
+\begin{enumerate}
+	\item Explain what data is available and in what format and how much. Also mention what has been done already to the data, i.e.\ that it has been skull striped (?) and aligned.
+	\item Explain that the distribution among the classes is highly non-uniform which can be a probelm, including table of frequencies.
+	\item Finally also mention that i am only interested in the high-grade glioma case explaining why (time reasons, harder, normally used to report results)
+\end{enumerate}
+\subsection{Online submition platform}
+Not sure this is worth an entire subsection, could be added to the intro chapter.
+\begin{enumerate}
+	\item Explain how the segmentations are submitted
+	\item Explain the different test sets: Challenge and Leaderboard and explain why Challenge was chosen.
+\end{enumerate}
 
 \chapter{Implementation [40\%]}
-\section{CNN models}
+
+\section{Data pre-processing}
+
+\subsection{N4ITK}
+\subsection{Normalizations}
+\subsubsection{Winsorizing}
+\subsubsection{Linear transformations}
+
+\subsection{Patch extraction}
+
+
+\section{Pereira model}
 I implemented the convolutional neural networks using the Keras (Add reference) library, which allows users to create neural networks by combining different layers together. The more common layers come as part of the library but Keras allows the user to define layers as well.  The architecture proposed by Pereira et al \cite{pereira} used the following layers:
 \begin{itemize}
 	\item two-dimensional convolutional layers
@@ -241,24 +311,35 @@ This makes it easy to create deep, convolutional networks and to experiment with
 Before training the models, we further need to specify which loss function and which algorithm should be used to respectively specify and minimise the loss function. Again, keras makes this very simple:
 \lstinputlisting[language=Python, firstline=71, lastline=72]{../Work/model.py}
 
-\section{Data preprocessing}
+\subsection{Architecture}
+\subsection{Implementation of the architecture in Keras}
 
+\section{My model}
+\subsection{Architecture}
+\subsection{Implementation}
 \section{Training}
+\subsection{Cambridge High Performance Computing cluster}
+\subsection{NVIDIA TITAN X GPU}
 
 \section{Segmentation}
+\subsection{Pereira model}
+\subsection{My model}
 
-\chapter{Evaluation + Conclusion [20\%]}
+\chapter{Evaluation (+ Conclusion [20\%])}
 
 \section{Metrics used for the evaluation}
+\subsection{Regions of evaluation}
 \subsection{Dice score}
 \subsection{Positive predictive value}
 \subsection{Sensitivity}
 
 \section{Evaluation of the model proposed by Pereira et al.}
-\section{Evaluation of the my model}
+\section{Evaluation of my model}
 \section{Comparison}
 
 \chapter{Conclusion}
+\section{Summary of achievements}
+\section{Future Work}
 
 I hope that this rough guide to writing a dissertation is \LaTeX\ has
 been helpful and saved you time.
