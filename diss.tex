@@ -136,7 +136,7 @@ extent for a comparable purpose.
 \section{Motivation}
 The glioma is most frequent type of brain tumours in adults. As their name suggest these arise from glial cell and infiltrate the surrounding tissue. Goodenberger and Jenkins \cite{gliomas_research} reported that gliomas make up to 30\% of all brain and central nervous system tumours and 80\% of all malignant brain tumours. These gliomas are further divided into low-grade and high-grade, depending on their pace of growth. While the low-grade gliomas come with a life expectancy of several years, the clinical population with the more aggressive form of the diseases, the high-grade glioma, have a median survival rate of two years or less \cite{gliomas_life_expectancy}. For both groups, intensive neuroimaging protocols are used both before and after the treatment to evaluate the progression of the disease and the success of the treatment. It is therefore clear that image processing algorithms that can automatically analyse tumour scans would be of great value for improved diagnosis, treatment planning and evaluation of the tumour progression. Developing these automated brain tumour segmentation algorithms is technically challenging as lesion areas are only defined by changes in intensity relative to the surrounding normal tissue. Tumour size, extension and localisation also vary across patient, making it hard to incorporate and encode strong priors on shape and location which are often used in segmentations of anatomical structures. The problem of automatic brain tumour segmentation is therefore still an active research area. \cite{brats-proceedings}.
 
-The aim of my project is to understand and try to replicate one of the more recent techniques used to solve this problem of brain tumour segmentation. The method was proposed by Pereira et al.\cite{pereira} in 2016 and is based on the application of convolutional neural networks. In recent years, convolutional neural networks have been shown to significantly outperform other methods in many areas such as Computer Vision (FaceNet\cite{face_net}), image classification (AlexNet \cite{alex_net}), Natural language processing \cite{nlp_deep_learning} and many others. The field of bioinformatics and medical imaging is no exception to this, in particular convolutional neural networks have been shown to perform as well as pervious state-of-the-art methods and even to outperform them on the problem of brain tumour segmentation \cite{pereira} \cite{brats_cnn_with_crf}. Thus convolutional neural networks have also become part of the state-of-the-art methods in brain tumour segmentation.
+In recent years, convolutional neural networks have been shown to significantly outperform other methods in many areas such as Computer Vision (FaceNet\cite{face_net}), image classification (AlexNet \cite{alex_net}), Natural language processing \cite{nlp_deep_learning} and many others. The field of bioinformatics and medical imaging is no exception to this, in particular convolutional neural networks have been shown to perform as well as pervious state-of-the-art methods and even to outperform them on the problem of brain tumour segmentation \cite{pereira} \cite{brats_cnn_with_crf}. Thus convolutional neural networks have also become part of the state-of-the-art methods in brain tumour segmentation. The aim of my project is to understand and try to replicate one of the more recent techniques using convolutional neural networks applied to the problem of brain tumour segmentation. I chose to replicate a method proposed by Pereira et al.\cite{pereira} in 2016 which is based on two-dimensional convolutional neural networks. In the second phase of my project, I experimented with different network architectures to explore what effect different changes would make to the performance of the network. In this dissertation I propose a different architecture.
 
 I chose this project as it would allow me to explore the field of machine learning from a more practical point of view by working on a still open-ended but critical problem whilst having a clear starting point. The second reason is chose this project is that there is an open dataset freely provided by the BraTS Conference \cite{brats-proceedings}.
 
@@ -149,13 +149,21 @@ On the other hand, discriminative method use very little prior knowledge on the 
 
 Zikic et al.\ \cite{zikic} first proposed a convolutional neural network with two convolutional layers followed by a fully-connected layer. The inputs to the network were patches of size $19 \times 19$ taken from slices of the scans. Thus, only a two-dimensional convolutional neural network is required which is much more efficient than a three-dimensional one and is less prone to overfitting. Continuing on this approach, Havaei et al.\ \cite{havaei} used a novel double-pathway architecture and a cascade of two networks to rank 2\textsuperscript{nd} on the BraTS2015 challenge. Novel in their approach was also the training of the network in two phases, first sampling patches from an equiprobable distribution before training only the fully-connected layers on data sampled using proportions near the originals. Pereira et al.\ \cite{pereira} proposed a deeper two-dimensional convolutional neural network of 11 layers, that ranked 1\textsuperscript{st} in the BraTS2013 and BraTS2015 challenges. As the aim of my project is to replicate their method, I will explain it in more details in the Preparation and Implementation chapters. Finally, it is worth noting that some of the more recent approaches have successfully overcome the difficulties involved in training three-dimensional neural networks. In particular the model proposed by Kamnitsasa et al.\ \cite{kamnitsas} used a three-dimensional convolutional neural network with residual connections \cite{resnet} to take the first place in the BraTS2015 challenge.
 
-\section{Supervised learning and Classification}
+\section{Supervised learning and classification}
+Broadly speaking, we can divide machine learning into supervised and unsupervised learning. In unsupervised learning, the task is to learn a function to describe some hidden structure from unlabelled data. On the other hand, in supervised learning, the task is to infer a function $f: A \to B$ from a set of $n$ labelled data points $\mathbb{X} = \{(\textbf{a}_1, b_1), ..., (\textbf{a}_n, b_n)\}$. Typically, if $A \subset \mathbb{R}^d$ and $b_i \in \mathbb{R}$ then the task is also called \textbf{regression} and if $B$ is discrete, the task is called \textbf{classification}. In either case, we generally define an appropriate loss function $\mathcal{L}: B \times B \to \mathbb{R}$ and we aim to minimise the loss over some test dataset $\sum_{i=1}^n \mathcal{L}(f(\textbf{a}_i), b_i)$ and hope that the learned function $f$ will be able to generalise well on unseen data.
+
+The brain tumour segmentation task can be seen as an example of supervised learning, more specifically of a classification problem. We are given a set of MRI scans segmented into one of five classes:
 \begin{enumerate}
-	\item Explain how this segmentation task can be seen as a classification task.
-	\item A very brief intro to supervised learning is given in terms of data pairs $\mathbb{X}, \mathbb{Y}$ consisting of examples and labels.
-	\item Then introduce classification
-	\item Finally show how this segmentation problem can be reduced to a classification problem.
-\end{enumerate}
+	\item Non-tumour, which includes areas outside the brain and normal tissue inside the brain
+	\item Surrounding edema, which is swelling caused by excess fluid trapped in the brain's tissue
+	\item Necrotic tissue, which consists of dead cells
+	\item Non-enhancing tumour
+	\item Enhancing tumour
+\end{enumerate} 
+We can therefore reformulate the segmentation problem as the problem of learning a function $f$ that can map each pixel in the input scan to one of the 5 classes. If we then apply this function $f$ to every voxel, we have effectively created a segmentation.
+
+In the Preparation chapter I will explain how this function is modelled by convolutional neural networks and how the data is structured. Then, in the Implementation chapter I will go over how the data is transformed into a format that can be used and how the convolutional neural network proposed by Pereira et al.\ \cite{pereira} is implemented. I will also present the architecture of a model that my supervisor and I came up with. Then, I will explain in more details how the model is used to segment a scan. Finally, I will detail how the post-processing step based on connected components is implemented. In the evaluation chapter, I will go over how we can compare segmentations in a quantitative and meaningful way and will evaluate both models.
+
 \chapter{Preparation [26\%]}
 During the first phase of my project, the aim was to replicate the method used by Pereira et al \cite{pereira}, so it was crucial to first fully understand the steps taken in the paper to then be able to reimplement them. Unfortunately, the paper didn't include any source code which meant that if something wasn't fully explained in details, I would have to find out what was actually done. This turned out to be a problem for the pre-processing step as the proposed method uses a normalisation developed by Nyul [CITATION]. This normalisation requires human input, preferably from a domain expert, and I was therefore not able to use that normalisation method. The paper also proposed a second normalisation method, which used a combination of winsorizing and N4 normalization. This method performed slightly worse but had the advantage of being fully automated, which is why I chose to use this method instead.\\
 
@@ -488,8 +496,48 @@ Note that, as opposed to the patch extraction and the normalisation phases, the 
 \subsubsection{Winsorising}
 The first normalisation that is applied is called `winsorising'. The aim is to limit the values of extremes, in order to reduce the effect that outliers may have. This is also known as `clipping' in digital signal processing. I used a 98\% winsorisation, meaning that the data values below the 1\textsuperscript{st} percentile are set to the value of the 1\textsuperscript{st} percentile and the value above the 99\textsuperscript{th} percentile are set to the value of the 99\textsuperscript{th} percentile. Note that this process is different from trimming as the values are not discarded but just modified.
 
-\subsubsection{N4ITK}
-This section might be slightly longer. It should definitely include a picture of a comparison of some slices before and after the normalisation. I am not sure if I should explain what the normalisation actually does as it is quite complicated.
+\subsubsection{N4 Bias field correction}
+The second normalisation applied is the N4 bias field correction \cite{n4itk}. N4 is a variant of the popular nonparametric nonuniform intensity normalisation N3. This family of corrections aim at eliminating the bias introduced by MRI scanners. This biases can be difficult for automated segmentation algorithms to handle because the intensity of the same tissue can vary across a scan. 
+
+As this correction is rather complicated and not the main point of my project, I will not go into more details here. However, for completeness, table \ref{table:n4_params} lists the parameters I used to perform the normalisation. I first used the default parameters and later emailed the author of \cite{pereira} who kindly agreed to share the parameters he used in his published method. These are the parameters reported here. I used the implementation provided by the `Nipype'\footnote{\url{http://nipype.readthedocs.io/en/latest/}} and the `Advanced Normalization Tools'\footnote{url{http://stnava.github.io/ANTs/}}.
+
+\begin{table}[h]
+\centering	
+\label{table:n4_params}
+\begin{tabular}{ c c } 
+\textbf{Parameter} & \textbf{Value} \\
+ \hline
+ n\_iterations & [20,20,20,10] \\ 
+ dimension & 3 \\
+ bspline\_fitting\_distance & 200 \\
+ shrink\_factor & 2\\
+ convergence\_threshold & 0
+\end{tabular}
+\caption{Parameters used to perform the N4ITK correction.}
+\end{table}
+
+Figure \ref{fig:n4itk_example} shows the effects that winsorising and the N4 bias field correction have on scans for each of the four modalities T1, T1c, T2 and Flair.
+\begin{figure}
+	\centering
+	\label{fig:n4itk_example}
+	\includegraphics[width=0.3\textwidth]{t1_no_norm_example}
+	\includegraphics[width=0.3\textwidth]{t1_winsorized_example}
+	\includegraphics[width=0.3\textwidth]{t1_n4itk_example} \\
+	\vspace{0.5cm}
+	\includegraphics[width=0.3\textwidth]{t1c_no_norm_example}
+	\includegraphics[width=0.3\textwidth]{t1c_winsorized_example}
+	\includegraphics[width=0.3\textwidth]{t1c_n4itk_example} \\
+	\vspace{0.5cm}
+	\includegraphics[width=0.3\textwidth]{t2_no_norm_example}
+	\includegraphics[width=0.3\textwidth]{t2_winsorized_example}
+	\includegraphics[width=0.3\textwidth]{t2_n4itk_example} \\
+	\vspace{0.5cm}
+	\includegraphics[width=0.3\textwidth]{flair_no_norm_example}
+	\includegraphics[width=0.3\textwidth]{flair_winsorized_example}
+	\includegraphics[width=0.3\textwidth]{flair_n4itk_example}
+	\caption{Example of the effects of winsorising and applying the N4ITK correction applied to scans for each of the four modalities. The first image in each row is the original scan, the middle image is obtained by winsorizing the original image and the last image is obtained by applying the N4ITK correction to the winsorised scan. From top to bottom, slice $z=89$ is shown for patient 1 for the T1, T1c, T2 and Flair scans.}
+\end{figure}
+
 
 \subsubsection{Linear scaling}
 Then, each scan with different modality is individually scaled into the range $[0,1]$. This is done to guarantee that the absolute values of the different scans are within the same range, making it possibly easier for the convolutional neural network to generalise the features it learns onto new data. In general to linearly scale a data point $x$ into the range $[a, b]$, the formula described in equation \ref{eq:linear_scaling_general} is applied, where $x_{min}$ and $x_{max}$ are the minimum and maximum value across the dataset to scale.
@@ -516,14 +564,14 @@ Similarly as for the linear scaling, I used numpy's `mean' and `std' functions a
 
 \subsection{Architecture}
 
-The model proposed by Pereira et al. \cite{pereira} consists of 11 layers, shown in figure \ref{fig:pereira_model}. 
-\begin{figure}
+The model proposed by Pereira et al. \cite{pereira} consists of 11 layers, shown in figure \ref{fig:pereira_model}. The first three layers are convolutional layers with filter size $3 \times 3$, stride $1 \times 1$ and width 64. Three layers are used consecutively because the combination of them  effectively has a receptive field of size $7 \times 7$ while having fewer parameters then a single $7 \times 7$ convolutional layer would have, making the network less prone to overfitting. [CITATION 36 in pereira]. The next layer is a max pooling layer of size $3 \times 3$ and stride $2 \times 2$. This is an unusual design as the size is larger than the stride. This is done because although pooling can be positive to eliminate unwanted details and achieve invariance, it can also eliminate some of the important details. By keeping the size of the layer larger than the stride, the pooling will overlap which will allow the network to keep more information about location. Next, three convolutional layers are applied, this time doubling the width to 128 filters. Again a max pooling layer with the same hyper-parameters as the previous one is applied, before adding three fully-connected layers of size 256, 256 and 5 respectively. Table \ref{table:pereira_weights} shows the number of weights in each layer. 
+
+\begin{figure}[h]
 	\centering
 	\includegraphics[width=\textwidth]{pereira_model}
 	\caption{Convolutional network architecture proposed by Pereire et al.}
 	\label{fig:pereira_model}
 \end{figure}
-The first three layers are convolutional layers with filter size $3 \times 3$, stride $1 \times 1$ and width 64. Three layers are used consecutively because the combination of them  effectively has a receptive field of size $7 \times 7$ while having fewer parameters then a single $7 \times 7$ convolutional layer would have, making the network less prone to overfitting. [CITATION 36 in pereira]. The next layer is a max pooling layer of size $3 \times 3$ and stride $2 \times 2$. This is an unusual design as the size is larger than the stride. This is done because although pooling can be positive to eliminate unwanted details and achieve invariance, it can also eliminate some of the important details. By keeping the size of the layer larger than the stride, the pooling will overlap which will allow the network to keep more information about location. Next, three convolutional layers are applied, this time doubling the width to 128 filters. Again a max pooling layer with the same hyper-parameters as the previous one is applied, before adding three fully-connected layers of size 256, 256 and 5 respectively. Table \ref{table:pereira_weights} shows the number of weights in each layer. 
 
 \begin{table}
 \centering	
@@ -550,7 +598,7 @@ FC			& $\quad 5 	\times\ 1 	\times\ 1$ 	& 1285\\
 \end{table}
 
 
-The initialisation of the weights in the convolutional layers was done using the Xavier initialisation \cite{Xavier_ini}. The biases were initialised to the fixed constant value 0.1, except for the last layer.
+The initialisation of the weights in the convolutional layers was done using the Xavier initialisation \cite{xavier_init}. The biases were initialised to the fixed constant value 0.1, except for the last layer.
 
 The activation function used throughout the network is the leaky rectifier, with  $\alpha = 0.333$. However, using a leaky rectifier over a rectifier has very little effect on the final results, as will be shown in the next chapter. ???
 
