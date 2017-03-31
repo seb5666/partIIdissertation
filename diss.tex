@@ -19,7 +19,9 @@
 \usepackage{verbatim}
 \usepackage{docmute}   % only needed to allow inclusion of proposal.tex
 
+\usepackage{multirow}
 \usepackage{hhline} % Draw partial double lines in tables
+
 \usepackage{listings} % Package to display code and customize highlighting
 \usepackage{color}
  
@@ -633,7 +635,7 @@ As the last step before being able to train the model, we need to specify which 
 \end{lstlisting}
 
 \subsection{Training}
-The paper specifies that the model was trained over 20 epochs, passing each patch through the network once per epoch. The optimisation algorithm used is a standard stochastic gradient descent algorithm with Nesterov momentum ($\mu = 0.9$). The learning rate should be linearly decreased from $3 \times 10^{-5}$ to $3 \times 10^{-7}$. Keras doesn't implement this functionality, so it has to be done manually. This can be done using algoritm \ref{alg:linear_decay}
+The paper specifies that the model was trained over 20 epochs, each training the network on 450,000 patches (90,000 per class selected at random as explained previously). The optimisation algorithm used is a standard stochastic gradient descent algorithm with Nesterov momentum ($\mu = 0.9$). The learning rate should be linearly decreased from $3 \times 10^{-5}$ to $3 \times 10^{-7}$. Keras doesn't implement this functionality, so it has to be done manually. This can be done using algoritm \ref{alg:linear_decay}
 
 \begin{algorithm}
 \caption{Training the model with linearly decaying learning rate}\label{alg:linear_decay}
@@ -663,19 +665,78 @@ After training the model for 20 epochs, the model is saved in a directory specif
 TODO: ADD GRAPH OF TRAINING/VALIDATION ACCURACY
 \section{My model}
 \subsection{Architecture}
+My model differs in a few important ways from the model proposed by Pereira et al. \cite{pereira}. 
+\begin{enumerate}
+	\item I have decided to increase the size of the input patches, almost doubling it to $64 \times 64$. This is because a patch size of only $33 \times 33$ seems very small and could potentially miss important contextual clues from voxels slight further away in the slice.
+	\item The output of the network is no longer a $5 \times 1$ array of the probabilities for each class. Instead, the output is now a $5 \times 64$ array that outputs the class probabilities for each voxel in the central $8 \times 8$ `subpatch' from the input. 
+	\item I have decided to use Batch Normalisation instead of Dropout to regularise the network as it has been shown to work better and significantly speed-up the training process \cite{batch_normalization}. 
+	\item I also added a L2 regularisation penalty to the loss function as a further method to decrease the amount of overfitting done by my model.
+	\item The network is fully convolutional, meaning that there are only convolutional layers and no fully-connected layers. I made this decision for the following reasons:
+	\begin{enumerate}
+		\item Because no fully-connected layers are used, which are usually those with the highest number of parameters, a fully convolutional neural network will have fewer parameters. It will therefore be less prone to overfitting.
+		\item The fully convolutional neural network is much faster to train and can predict outputs much faster, due to the fact that it mainly applies convolutions, which can be parallelised easily on a GPU. This combined with the fact that the output is an $8 \times 8$ patch, will greatly decrease the time necessary to segment a entire scan.
+	\end{enumerate}
+\end{enumerate}
+
+My model should therefore be able to predict classes much faster, using a larger context. The main question now becomes how well it is able to learn the data and to generalise on the challenge data. This will be discussed in the Evaluation chapter.
+
+The model contains 13 layers, shown in table \ref{table:my_model}. All convolutional layers have filter size $3 \times 3$ and stride $1 \times 1$. The width of the filters is increased as the output shape decreases to allow the network to model complex features. Max pooling layers are applied every 2--3 convolutional layers, to reduce the spatial input for the following layers. It is important to note that there are no fully-connected layers. Instead convolutional layers and max pooling layers are applied until we have achieved the correct dimension of $5 \times 8 \times 8$. At this point, we have to flatten the input into a single two-dimensional array of size $5 \times 64$, onto which we can apply a softmax activation to obtain normalised probabilities for each one of the central 64 voxels.
+
+\begin{table}[h]
+\centering	
+\label{table:my_model}
+\begin{tabular}{ c c S[table-format=7.0] } 
+\textbf{Layer type} & \textbf{Output shape} & \textbf{\# Parameters} \\
+ \hline
+ Conv 		& $\ 64 	\times 64 	\times 64$ 	& 2368 \\ 
+ Conv 		& $\ 64 	\times 64 	\times 64$ 	& 36928 \\ 
+Max-Pool 	& $\ 64 	\times 32 	\times 32$ 	& 0\\
+ Conv 		& $128 		\times 32 	\times 32$	& 73856 \\ 
+ Conv 		& $128 		\times 32 	\times 32$ 	& 147584 \\ 
+ Conv 		& $128 		\times 32 	\times 32$ 	& 147584 \\ 
+Max-Pool 	& $128 		\times 16 	\times 16$	& 0\\
+ Conv 		& $256 		\times 16 	\times 16$ 	& 295168 \\ 
+ Conv 		& $256 		\times 16 	\times 16$ 	& 590080 \\ 
+Max-Pool 	& $256 		\times\ 8 	\times\ 8$	& 0\\
+ Conv 		& $256 		\times\ 8 	\times\ 8$	& 590080 \\ 
+ Conv 		& $256 		\times\ 8 	\times\ 8$ 	& 590080 \\ 
+ Conv 		& $5 		\times\ 8 	\times\ 8$ 	& 11525 \\ 
+\hhline{~~=}
+\rule{0pt}{3ex}    
+&& 2118213\\
+\end{tabular}
+\caption[Summary of my convolutional neural network architecture, including the number of parameters in each layer.]{Summary of my convolutional neural network architecture, including the number of parameters in each layer.}
+\end{table}
+
 \subsection{Implementation}
+I implemented my model using Keras and it is therefore very similarl to how I implemented the model proposed by Pereira et al. However, there is a subtlety that arises from the fact that the network is fully-convolutional. The output of the last layer is a three-dimensional array of size $5 \times 8 \times 8$ but the softmax activation can only take as an argument two-dimensional arrays. Therefore, I have to reshape the array into a $64 \times 5$ array before applying the softmax activation. Keras makes this operation easy with the `Reshape' and `Permute' layers:
+\begin{lstlisting}[language=Python]
+	model.add(Reshape((5, 64)))
+	model.add(Permute((2,1)))
+	model.add(Activation('softmax'))
+\end{lstlisting}
+
+Similarly, using Batch Normalisation is easy in Keras, as it has a `BatchNormalization' layer built in its library. A typical convolutional layer with Batch Normalisation is implemented as follows:
+\begin{lstlisting}[language=Python]
+	model.add(Convolution2D(256, 3, 3, border_mode='same', init=init, W_regularizer=l2(l)))
+	model.add(BatchNormalization(axis=axis, trainable=trainable))
+	model.add(LeakyReLU(alpha))
+\end{lstlisting}
+
 \subsection{Training}
+TODO: choose a training method that works fairly well...
 
 \section{Segmentation}
-After the model has been trained, the next step consists of segmenting entire scans to either validate the model, inspect how it behaves or to submit segmentations to the online platform. This means that the input scan has to be transformed into a set of patches that can then be evaluated by the convolutional neural network. The result of classifying each of those patches then has to be put back into a single three-dimensional scan.
+After the model has been trained, the next step consists of segmenting entire scans to either validate the model, inspect how it behaves or to submit the segmentations to the online platform for evaluation. This means that the input scan has to be transformed into a set of patches that can then be evaluated by the convolutional neural network. The result of classifying each of those patches then has to be put back into a single three-dimensional scan, which will be the segmentation.
+
 \subsection{Pereira model}
-For the model proposed by Pereira et al. \cite{pereira}, the convolutional neural network can be modelled as a function classifying a patch of size $33 \times 33 \times 4$. In this case, the segmentation of a patient is equivalent to convolving the convolutional neural network on each of the two-dimensional slices of the input images. The images must however be zero-padded around the x and y edges so as to keep the dimensions of the segmentation the same as the dimensions of the input images. Hence the steps are:
+For the model proposed by Pereira et al. \cite{pereira}, the convolutional neural network can be modelled as a function classifying the central voxel of a patch of size $33 \times 33 \times 4$. In this case, the segmentation of a patient is equivalent to convolving the convolutional neural network on each of the two-dimensional slices of the input images. The images must however be zero-padded around the x and y edges so as to keep the dimensions of the segmentation the same as the dimensions of the input images. Hence the steps are:
 \begin{enumerate}
 	\item Read in the scan images as a single 4-dimensional array of size $z \times y \times x \times 4$.
-	\item Preprocess the image as explained in section \ref{section:pre-processing}, except for the data augmentation step. Thus, the image is first winsorised, then the N4ITK correction is applied to it, and finally each modality within the image is linearly scaled and its mean and variance are standardised.
+	\item Pre-process the image as explained in section \ref{section:pre-processing}, except for the data augmentation step. Thus, the image is first winsorised, then the N4ITK correction is applied to it, and finally each modality within the image is linearly scaled and its mean and variance are standardised.
 	\item Pad the x and y dimensions with zeros. Since we want the convolution operation to return an image of identical size, we need to pad with exactly half of the width of the filter, that is 16 voxels. The array has now size $z \times (y + 32) \times (x + 32) \times 4$.
-	\item For each slice in the axial plane, that is for each slice in the z axis, extract all patches into a list. Note that this has to be done for each slice sequentially as the memory requirements to do it once for the entire image would be to high. For each slice there will be $y \cdot x$ patches of size $33 \times 33 \times 4$.
-	\item Evaluate the convolutional neural network on each patch. Using a GPU for this can make this step significantly faster. The convolutional neural network will return a probability distribution over the classes for each patch. The most likely class is chosen as the class for that patch. Record the classes in a second list
+	\item For each slice in the axial plane, that is for each slice in the z axis, extract all patches into a list. Note that this has to be done for each slice sequentially as storing all patches for the entire image at once would not be possible. For each slice there will be $y \cdot x$ patches of size $33 \times 33 \times 4$.
+	\item Evaluate the convolutional neural network on each patch. Evaluating these patches in batches using a GPU can make this step significantly faster. The convolutional neural network will return a probability distribution over the 5 classes for each patch. The most likely class is chosen as the class for that patch. Record the classes in a second list.
 	\item Transform the list of classes back into a two-dimensional array of size $y \cdot x$. This slice corresponds to the z.
 \end{enumerate}
 
@@ -698,9 +759,24 @@ Figure \ref{fig:example_pereira_segmentation} shows the segmentation of the firs
 \end{figure}
 
 \subsection{My model}
+The segmentation algorithm for my model is different from the one I implemented for the Pereira model as my model classifies a square of $8 \times 8$ voxels at a time. First, we have to pad the image using a slightly different formula, depending on the length of the image in the x and y axis. This is because we are effectively convolving the model on the slices with a stride of $8 \times 8$ and thus the last application of the model in a row or column might not fit if the width or height of the slice is not a multiple of 8. To fix this I pad the model by $\frac{64 -8}{2} = 28$ at in front of the x and y axis and an extra 8 voxels at the end of the x and y axes so pad the end with $\frac{64 -8}{2} + 8 = 36$. The convolution is then implemented by two nested for loops, with increments of 8 after each step. In more detail, the steps involved in the segmentation algorithm applied to every slice are:
 \begin{enumerate}
-	\item Similarly here, but show how it is more complicated as the model now predicts a single block of 64x1 voxels, which is really an 8x8 block and say that we want to use as large batch sizes as possible to accelerate the process.
+	\item Extract the patches of size $64 \times 64 \times 4$ for the entire slice. This can be done after padding by two nested for loops with step increments of 8.
+	\item For each patch, use the convolutional neural network to predict the class for its central 64 voxels. This are returned in a one-dimensional array of length 64.
+	\item Concatenate in order the predictions for all patches into a single one-dimensional array of length $64 \cdot \#patches$.
+	\item Calculate the number of patches that fit into the slice as follows:
+		\begin{equation}
+		\begin{split}
+			\text{height}_p & \gets \bigg \lceil \cfrac{\text{image\_height}}{8} \bigg \rceil 	 \\
+			\text{width}_p & \gets \bigg \lceil \cfrac{\text{image\_width}}{8} \bigg \rceil 	 \\
+		\end{split}		
+		\end{equation}
+	\item Reshape the voxels into a single 4-dimensional array of size $(\text{height}_p \times \text{width}_p \times 8 \times 8)$
+	\item Concatenate the array along its first axis. This can be done using the `concatenate' function provided by numpy. The result is a 4-dimensional array of size $(\text{height}_p \times 8 \cdot \text{width}_p \times 8)$. This will concatenate individual patches along rows together.
+	\item Similarly, concatenate the new array along its first axis. This will concatenate the columns along the rows, resulting into a single 2-dimensional array of size $(8 \cdot \text{height}_p \times 8 \cdot \text{width}_p)$.
+	\item Finally, remove the extra voxels that might have been added by the extra padding needed. This can be done using numpy to trim the array to the image width and height. The result will be a 2-dimensional array which is the segmented slice.
 \end{enumerate}
+
 
 \section{Data post-processing}
 After the new patient has been segmented, a further simple heuristic is used to remove small volumes of data labeled as non normal tissue. This assumption is made on the basis that the tumour or tumours will be connected into components of relatively large size. Pereira et al \cite{pereira} proposed to remove all connected components of less than 10,000 voxels in volumes.
@@ -798,7 +874,7 @@ In table \ref{table:pereira_dice_results} are shown the Dice score values I obta
 \centering	
 \label{table:pereira_dice_results}
 \begin{tabular}{ c | c c c} 
-\textbf{Patient} & \multicolumn{3}{c}{\textbf{Dice score}} \\
+\multirow{2}{*}{\textbf{Patient}} & \multicolumn{3}{c}{\textbf{Dice score}} \\
  & Complete & Core & Enhancing \\
  \hline
 1 &	0.722 & 0.779 & 0.561\\
@@ -836,7 +912,7 @@ Table \ref{table:pereira_other_results} shows the sensitivity and the positive p
 \centering	
 \label{table:pereira_other_results}
 \begin{tabular}{ c | c c c | c c c} 
-\textbf{Patient} & \multicolumn{3}{c|}{\textbf{Sensitivity}} & \multicolumn{3}{c}{\textbf{Positive predictive value}}\\
+\multirow{2}{*}{\textbf{Patient}} & \multicolumn{3}{c|}{\textbf{Sensitivity}} & \multicolumn{3}{c}{\textbf{Positive predictive value}}\\
  & Complete & Core & Enhancing & Complete & Core & Enhancing \\
 \hline
 1 & 0.960 &	0.781 & 0.407 & 0.578 & 0.778 & 0.902 \\
