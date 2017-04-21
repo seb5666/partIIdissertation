@@ -192,7 +192,8 @@ To load in the scans, which are in MetaImage medical format (`.mha') I used the 
 Finally, I used the Keras\footnote{\url{https://keras.io/}} library, which makes it easy to create and train convolutional neural networks while leaving all important design and architectural decisions to the user. This was extremely helpful, as this project wouldn't have been possible (at least to such an extend) without it. Furthermore, as Keras is becoming the standard open-source library in deep learning research and applications, many online resources were available when needed.
 
 \subsection{Graphical Processing Unit (GPU)}
-EXPLAIN THAT I USED THE cambidge HPC AND then the TITAN X by the lab (+date when made available)
+To train the convolutional neural network in a reasonable amount of time, I need a computer with an external GPU. Initially, I used the Wilkes Cluster\footnote{\url{https://www.hpc.cam.ac.uk/services/wilkes}} from the Cambridge University High Performance Computing services, which is equipped with NVIDIA K20 GPUs. From February 23\textsuperscript{rd} 2017, I was able to use the TITAN X GPUs from the Computational Biologoly group in the Computer Lab. This reduced the training time for the model proposed by Pereira et al.\ from about 12 hours to 2--3 hours.
+
 
 \section{Theoretical background}
 \subsection{Artificial neural networks}
@@ -235,11 +236,11 @@ This functions are plotted in figure \ref{fig:activation_functions}.
 \end{figure}
 Historically, the hyperbolic tangent function or the sigmoid function have been used as activation functions. However, the magnitude of the gradients of these two activation functions is always below 1. This causes a numerical issue for deeper networks, as the gradients for each layer are multiplied together during the backpropagation algorithm. This is known as the vanishing gradient problem \cite{vanishing_gradients} and is the reason why it is nowadays preferred to use the rectifier or the leaky rectifier functions, especially with deeper architectures.
 
-In a classification problem, the output layer will consist of $K$ nodes, one for each class indicating how strongly the network believes that the input belongs to this class. Using a softmax activation function for the last layer in a of a network with parameters $\theta$, we can view the output of node $k$ when presented with input $x^{(i)}$ as the probability $P(y_{\text{pred}}^{(i)} = k \mid x^{(i)};\theta)$. Since the the output of each neuron will range between 0 and 1 and the sum of all outputs will be 1. The softmax activation computes for each output $k$
+In a classification problem, the output layer usually consist of $K$ nodes, one for each class. Using a softmax activation function for the last layer, we can interpret the value at each node as the probability that the input belongs to this class.  More formally, in a of a network with parameters $\theta$, we can view the output of node $k$ when presented with input $x^{(i)}$ as the probability $P(y_{\text{pred}}^{(i)} = k \mid x^{(i)};\theta)$. The softmax activation computes for each output $k$
 \begin{equation}
 	\sigma(\mathbf{x})_k = \frac{e^{\mathbf{x}_k}}{\sum_{j=1}^{K}e^{\mathbf{x}_j}}
 \end{equation}
-where $\mathbf{x}$ is the vector consisting of all outputs from the previous layer.
+where $\mathbf{x}$ is the vector consisting of all outputs from the previous layer. The output value of each neuron will range between 0 and 1 and the sum of all outputs will be 1, hence we can indeed interpret the output as a probability distribution.
 
 \subsubsection{Loss function}
 Now, that we have defined what the network computes for each input, we need to measure how well our network approximates our training data. A loss function is therefore introduced. Since the aim of the network is to classify the central pixel(s) of the patch, we use the categorical cross-entropy loss function
@@ -274,42 +275,40 @@ where $\mu$ is the momentum, typically set to 0.9. We then update our weights by
 Typically a slightly different version, called the Nesterov momentum, is used as it has been shown to work better in practice \cite{nesterov_momentum}.
 
 \subsection{Convolutional neural networks}
-Convolutional neural networks make the explicit assumption that the inputs will be images. This allows us to take advantage of some properties of images to make the forward function more effective and greatly reduce the number of weights in our network. 
+Convolutional neural networks make the explicit assumption that the inputs are images. This allows us to take advantage of some properties of images to make the forward function more effective and greatly reduce the number of weights in our network. 
 
-A typical convolutional network constists of three types of layers: \textbf{fully-connected layers}, \textbf{convolutional layers} and \textbf{pooling layers}.
-
-\subsubsection{Fully-connected layers}
-These are identical to the layers in ordinary neural networks as introduced earlier.
-
-\subsubsection{Convolutional layers}
-Unlike a fully-connected layer, a convolutional layer is three-dimensional, consisting of a width, height and depth. The parameters of a layer define a set of learnable filters, each spatially small along the width and height of the layer but with the depth equal to the depth of the input volume. Each filter in the layer is convolved with the input and computes the dot product at each point. The result is of this operation is a two-dimensional activation map, which has translational invariance, as the filter is convolved with the entire input and thus the same feature is detected independently of location. The computation done by such a filter in shown in figure \ref{fig:conv_example}. Finally, the two-dimensional activation maps are stacked along the depth axis to produce the output volume.
-
-\begin{figure}
-	\centering
-	\includegraphics[scale=0.6]{conv_example}
-	\caption[Example computation done by a 3x3 filter in a convolutional layer]{Example computation done by a 3x3 filter in a convolutional layer. Both the stride and the padding are 1, so as to keep the output dimensions identical. The output at depth 0 for the marked element is $1 \cdot 1 + 2 \cdot 0 + 4 \cdot 1 + 3 \cdot 0 + 3 \cdot -1 + 4 \cdot -1 + 2 \cdot 1 + 3 \cdot -1 + 4 \cdot 1 = 1$ and similarly at depth 1 the output for that element is -3.}
-	\label{fig:conv_example}
-\end{figure}
-
-This connectivity pattern is inspired by the organization of the animal visual cortex. Individual neurons respond to stimuli in a small region of space known as the \textbf{receptive field}. Every value in an activation map can then be interpreted as the output of a neuron whose receptive field is the width and height of the filter and who shares its weights with all its neighbours to the left and right spatially.
-
-The size of the output volume is determined by three hyperparameters:
+A typical convolutional network constists of three types of layers:
 \begin{enumerate}
-	\item The \textbf{depth} corresponds to the number of filters in the layer and is therefore equal to the depth of the output volume.
-	\item The \textbf{stride} which determines by how many pixels the filter is moved during each step ofthe convolution. When the stride is greater than 1 the output will be smaller than the input.
-	\item The \textbf{padding} determines with how many zeros we pad the input width and height. This is particularly useful when we want to preserve the input dimensions.
+	\item \textbf{Fully-connected layers}: These are identical to the layers in ordinary neural networks as introduced earlier.
+	\item \textbf{Convolutional layers}: A convolutional layer is three-dimensional, consisting of a width, height and depth. The parameters of a layer define a set of learnable filters, each spatially small along the width and height of the layer but with the depth equal to the depth of the input volume. Each filter in the layer is convolved with the input and computes the dot product at each point. The result is of this operation is a two-dimensional activation map, which has translational invariance, as the filter is convolved with the entire input and thus the same feature is detected independently of location. The computation done by such a filter in shown in figure \ref{fig:conv_example}. Finally, the two-dimensional activation maps are stacked along the depth axis to produce the output volume.
+	
+	\begin{figure}
+		\centering
+		\includegraphics[scale=0.6]{conv_example}
+		\caption[Example computation done by a 3x3 filter in a convolutional layer]{Example computation done by a 3x3 filter in a convolutional layer. Both the stride and the padding are 1, so as to keep the output dimensions identical. The output at depth 0 for the marked element is $1 \cdot 1 + 2 \cdot 0 + 4 \cdot 1 + 3 \cdot 0 + 3 \cdot -1 + 4 \cdot -1 + 2 \cdot 1 + 3 \cdot -1 + 4 \cdot 1 = 1$ and similarly at depth 1 the output for that element is -3.}
+		\label{fig:conv_example}
+	\end{figure}
+
+	This connectivity pattern is inspired by the organization of the animal visual cortex. Individual neurons respond to stimuli in a small region of space known as the \textbf{receptive field}. Every value in an activation map can then be interpreted as the output of a neuron whose receptive field is the width and height of the filter and who shares its weights with all its neighbours to the left and right spatially.
+
+	The size of the output volume is determined by the following hyperparameters:
+	\begin{enumerate}
+		\item The \textbf{depth} corresponds to the number of filters in the layer and is therefore equal to the depth of the output volume.
+		\item The \textbf{stride} which determines by how many pixels the filter is moved during each step ofthe convolution. When the stride is greater than 1 the output will be smaller than the input.
+		\item The \textbf{padding} determines with how many zeros we pad the input width and height. This is particularly useful when we want to preserve the input dimensions.
+	\end{enumerate}
+	
+	\item \textbf{Pooling layers}: The function of the pooling layer is to reduce the spatial size of the input layer in order to reduce the number of parameters and computation in the network. The most common pooling layer implementation is the \textbf{max-pooling} which just convolves a two-dimensional maximum operator of a given size, typically 2x2. The \textbf{stride} again determines the step size.
+
 \end{enumerate}
 
-\subsubsection{Pooling layers}
-The function of the pooling layer is to reduce the spatial size of the input layer in order to reduce the number of parameters and computation in the network. The most common pooling layer implementation is the \textbf{max-pooling} which just convolves a two-dimensional maximum operator of a given size, typically 2x2. The \textbf{stride} again determines the step size.
-
-\subsubsection{Putting the layers together}
-A convolutional neural network typically consists of a sequence of these layers, starting with pairs of convolutional layers and max pooling layers. The idea is that each one of these pairs of convolutional and pooling layers can learn more and more abstract features using the features learned by the previous layer. For example, the first pair might learn to recognise edges, the second layer shapes, etc.. The last few layers of the network consist entirely of fully-connected layers. These learn how to classify the data using the features learned by the convolutional and max pooling layers.
+A convolutional neural network typically consists of a sequence of these layers, starting with pairs of convolutional layers and max--pooling layers. The idea is that each one of these pairs of convolutional and pooling layers can learn more and more abstract features using the features learned by the previous layer. For example, the first pair might learn to recognise edges, the second layer shapes, etc.. The last few layers of the network consist entirely of fully-connected layers. These learn how to classify the data using the features learned by the convolutional and max pooling layers.
 
 \subsection{The overfitting problem}
-A common problem that arises with neural networks models that is worth discussing in some details is \textbf{overfitting}. This occurs when the model is not able to generalise on previously unseen data and instead just memorises the training data. Due to the large number of weights in deep convolutional neural networks, these are particularly prone to overfitting. Many techniques and heuristics have been developed in order to help prevent this; in my project I have used three of them: \textbf{L2 weight normalisation}, \textbf{Dropout} and \textbf{Batch Normalisation}
-\subsubsection{\textbf{L2} weight normalisation}
-The intuition behind this normalisation is that by preventing individual parameters to grow without bounds, the model must learn how to smoothly extract features of the data and this in turn will prevent the model from just memorising the data. This is achieved by adding a regularisation penalty to the loss function. There are many different regularisation costs one could use, the most common ones are the L2 and L1 normalisation. In my project, I used the L2 normalisation which computes the sum of the squares of every parameter:
+A common problem that arises with neural networks models is \textbf{overfitting}. This occurs when the model is not able to generalise on previously unseen data and instead just memorises the training data. Due to the large number of weights in deep convolutional neural networks, these are particularly prone to overfitting. Many techniques and heuristics have been developed in order to help prevent this; in my project I have used three of them: \textbf{L2 weight regularisation}, \textbf{Dropout} and \textbf{Batch Normalisation}, which I discuss below.
+
+\subsubsection{\textbf{L2} weight regularisation}
+The L2 regularisation prevents individual parameters to grow without bounds, instead making the network use all its parameters, which has the effect of preventing the model from just memorising the data\footnote{\url{http://cs231n.github.io/neural-networks-2/\#reg}}. This is achieved by adding a regularisation penalty to the loss function. There are many different regularisation costs one could use, the most common ones are the L2 and L1 normalisation. In my project, I used the L2 normalisation which computes the sum of the squares of every parameter:
 \begin{equation}
 	R(\theta) = \sum_{k}^{} \sum_{l}^{} \theta_{k,l}^2
 \end{equation} 
@@ -332,7 +331,7 @@ where $\textbf{r}$ is a vector of $n$ independent Bernoulli random variables eac
 
 At test time dropout is not applied. Thus, the network weights have to be scaled by a factor $p$ to compensate for the extra inputs at each layer. The back-propagation algorithm remains unchanged for the sub-network and can therefore be applied in the learning phase.
 
-It is common in practice to apply Dropout only to the fully connected layers and not to the convolutional layers, as it has been shown to produce better results. As I will show later, this is also what was done by Pereira et al. \cite{pereira}.
+In practice, it is common to apply Dropout only to the fully connected layers and not to the convolutional layers, as it has been shown to produce better results. As I will show later, this is also what was done by Pereira et al. \cite{pereira}.
 
 \subsubsection{Batch Normalisation}
 The final regularisation technique used is Batch Normalisation \cite{batch_normalization}. As this technique is more recent than the paper published by Pereira et al., it was not used in their method. However, in the second phase of my project I experiment with a different architecture in which I used Batch Normalisation to prevent overfitting.
@@ -357,13 +356,13 @@ where the Batch Normalisation transformation is applied to each dimension indivi
 
 \section{Data source}
 \subsection{BraTS Challenge}
-I am using the dataset provided by BraTS2013 \cite{menze:hal-00935640} challenge. It is split into three sections:
+For my project, I use the dataset provided by BraTS2013\cite{menze:hal-00935640} challenge. It is split into three sections:
 \begin{enumerate}
 	\item The training dataset, which consists of 30 different patients and their ground truth marked by a human experts. The 30 patients are further divided into 20 high-grade glioma cases (HG) and 10 low-grade glioma cases (LG). The difference between these two types of brain tumours is their rate  of growth, which is slower for the low-grade case.
 	\item The challenge set, which consists of 10 high-grade patients without ground truth annotation. These scans are meant to be segmented by the participants of the challenge, who can then submit their segmentation online. 	
 	\item The leaderboard set contains 25 patients, including both high-grade and low-grade gliomas. The ground truth labels are not publicly available.
 \end{enumerate}
-The challenge and leaderboard sets were both used to rank the participants of the original BraTS conference. After the conference, to create a benchmarking resource, an online platform was made available that automatically calculates the scores (Dice score, PPV and Sensitivity) of submitted segmentations.
+The challenge and leaderboard sets are both used to rank the participants of the original BraTS conference. After the conference, to create a benchmarking resource, an online platform was made available that automatically calculates the scores (Dice score, PPV and Sensitivity) of submitted segmentations.
 
 Each patient consists of 4 images taken using different MRI contrasts: T2 and FLAIR MRI which highlight differences in tissue water relaxational properties, T1 MRI which shows pathological intratumoral take-up of contrast agents and T1c MRI. Each of these modalities shows different type of biological information and may therefore be useful for creating different features during the classification of the tissues. The highlight differences for the 4 modalities can be seen in figure \ref{fig:mri_scans}, which shows the same axial plane slice for a patient for each modality. 
 
@@ -377,7 +376,7 @@ Each patient consists of 4 images taken using different MRI contrasts: T2 and FL
 	\label{fig:mri_scans}
 \end{figure}
 
-To homogenise the data across the different scans, each patient's image volumes were co-registered to the T1c MRI scan, which has the highest spatial resolution in most cases. Then, all images were resampled to 1mm isotropic resolution in a standardised axial orientation with linear interpolation. Finally, all images were skull stripped to guarantee the anonymity of the patients.
+To homogenise the data across the different scans, each patient's image volumes are co-registered to the T1c MRI scan, which has the highest spatial resolution in most cases. Then, all images are resampled to 1mm isotropic resolution in a standardised axial orientation with linear interpolation. Finally, all images are skull stripped to guarantee the anonymity of the patients.
 
 The training dataset has been manually segmented by 4 different human experts into the 5 classes described in the introduction. These segmentations are then merged together to provide a single ground truth segmentation. As an example of what such a segmentation looks like I have included figure \ref{fig:expert_segmentations} which shows different slices of a T1 MRI scan annotated with the ground truth.
 
@@ -399,28 +398,63 @@ The training dataset has been manually segmented by 4 different human experts in
 
 
 \subsection{High grade gliomas}
-For this project I have decided to focus only on the high-grade glioma cases. This decision was mainly made to keep the scope of this project reasonable. Secondly, the results of most research papers in this area are commonly reported in terms of high-grade glioma cases as it is considered to be harder than the low-grade cases. Lastly, the challenge dataset, which consists only of high-grade patients allowed me to compare easily the results of my models with those of other researchers. Accordingly, I only use the 20 high-grade glioma cases of the training dataset.
+For this project I have decided to focus only on the high-grade glioma cases. I made this choice for the following reasons:
+\begin{enumerate}
+	\item To keep the scope of the project within that of a Part II project. Pereira et al.\ propose a different model for the low-grade glioma case which I would have had to replicate as well, possibly doubling the amount of work needed during the training phase.
+	\item Secondly, the results of most research papers in this area are commonly reported in terms of high-grade glioma cases as it is considered to be harder than the low-grade cases. 
+	\item Lastly, the challenge dataset, which consists only of high-grade patients allowed me to compare easily the results of my models with those of other researchers. Accordingly, I only use the 20 high-grade glioma cases of the training dataset to train the convolutional neural networks.
+\end{enumerate}
 
-\textit{To provide some guidance on how well the network is performing during the training phase, I also use 10 high-grade glioma cases from the BraTS2015 dataset, which contains images of different patients taken in a similar way. These 10 patients were used to provide the validation data.}
+\section{Software engineering}
+The processes of training a model and using that model to segment new scans can conceptually be divided into different stages, executed sequentially. They can therefore be modelled as data pipelines, where each stage takes as an input the output of the previous stage. The pipeline for training the model and the pipeline for segmenting an MRI scan are shown respectively in Figures \ref{fig:training_implementation_pipeline} and \ref{fig:segmentation_implementation_pipeline}.
+
+I used a waterfall like approach to implementing the two processes, building and testing the different stages independently. All stages except the scan normalisation and the post-processing are model dependent. Instead of reimplementing each stage twice, once for the model proposed by Pereira et al. and once for the model I propose, I implement each stage only once in such a way that the model-dependent aspects can be specified by the parameters of the model. This flexibility is especially important as the architecture of my model was not predefined but was found by experimenting with many different models.
+
+It is important to note that division into sequential stages provides a nice way of modularising the code base, but it is mainly conceptual. In practice, the data cannot flow in this manner because of the large amount of it. For example, in the patch extraction phase for the segmentation, it would not be possible to load all patches in memory at once. Therefore the patches are extracted and segmented slice-by-slice. The implementation of these stages is described in the next chapter.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=\textwidth]{training_implementation_pipeline}
+	\caption[The process of training the convolutional neural network as a pipeline]{The process of training the convolutional neural network as a pipeline. The boxes in red describe the input and outputs for each stage.}
+	\label{fig:training_implementation_pipeline}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width=\textwidth]{segmentation_implementation_pipeline}
+	\caption[The process of segmenting an MRI scan as a pipeline]{The process of segmenting an MRI scan as a pipeline. The boxes in red describe the input and outputs for each stage.}
+	\label{fig:segmentation_implementation_pipeline}
+\end{figure}
 
 \chapter{Implementation [40\%]}
-The process of training a model and using that model to segment new scans can be divided into the following stages, each of which can be implemented  independently:
-\begin{enumerate}
-	\item Scan normalisations and pre-processing
-	\item Patch extraction
-	\item Data augmentation
-	\item Training of the model
-	\item Segmenting new scans using the trained model
-	\item Segmentation post-processing
-\end{enumerate}
-This chapter is therefore organised in sections explaining these steps in order. The training stage is very dependent on the model and I therefore divided it into two sections: one for the model proposed by Pereira and one for my model.
+This chapter is divided into two parts, the first describing the implementation for the training of the model and the second describing how the trained model is used to segment MRI scans.
 
-\section{Scan normalisations}
+\section{Training the model}
+\subsection{Scan normalisations}
 \label{section:pre-processing}
-The first step is to read in the scans, which is done using the SimpleITK library that has inbuilt support for the MetaImage medical (`.mha') format in which the images are made available. For each patient, the 4 scans (T1, T1c, T2, Flair) are read in as numpy arrays and stacked along a new dimension, resulting in a 4-dimensional array for each patient of shape $(z_{\text{size}} \times y_{\text{size}} \times x_{\text{size}} \times 4)$. Then, I aggregate those arrays into a single python list containing all the training data.
+The first step is to read in the scans, which is done using the SimpleITK library that has inbuilt support for the MetaImage medical (`.mha') format in which the images are made available. For each patient, the 4 scans (T1, T1c, T2, Flair) are read in as numpy arrays and stacked along a new dimension, resulting in a 4-dimensional array for each patient of shape $(z_{\text{size}} \times y_{\text{size}} \times x_{\text{size}} \times 4)$.
+ 
+As explained in the previous chapter the data consists of 20 different patients, each consisting of 4 different MRI scans, taken with different modalities. Unfortunately, the size of the different scans varies from patient to patient. Table \ref{table:scan_sizes} shows how the sizes are distributed among patients. Because of this, the data for the patients cannot be aggregated into a single 5-dimensional numpy array. Instead, I aggregate those arrays into a single python list containing all the training data.
 
-The model proposed by Pereira et al. \cite{pereira} uses the Nyul normalisation \cite{nyul}. This normalisation requires human input, preferably from a domain expert, and I was therefore not able to use that normalisation method. The paper also proposed a second normalisation method, which used a combination of winsorizing and N4 normalization. This method performed slightly worse but had the advantage of being fully automated, which is why I chose to use this method instead.
+\begin{table}[h]
+\centering	
+\label{table:scan_sizes}
+\begin{tabular}{ c c } 
+\textbf{Size} & \textbf{Number of scans}\\
+ \hline
+ $\ 176 \times 216 \times 160$ & 8 \\ 
+ $\ 176 \times 216 \times 176$ & 6 \\ 
+ $\ 230 \times 230 \times 162$ & 2 \\ 
+ $\ 176 \times 236 \times 216$ & 1 \\ 
+ $\ 165 \times 230 \times 230$ & 1 \\ 
+ $\ 240 \times 240 \times 168$ & 1 \\ 
+ $\ 220 \times 220 \times 168$ & 1 \\ 
 
+\end{tabular}
+\caption{Scan sizes in voxels for the 20 different patients, dimensions are ordered as $(z \times y \times z)$}
+\end{table}
+
+The model proposed by Pereira et al. \cite{pereira} uses the Nyul normalisation \cite{nyul}. This normalisation requires human input, preferably from a domain expert, and I was therefore not able to use that normalisation method. The paper also proposes a second normalisation method, done by first winsorising the scans and then applying the N4 normalisation. This method performed slightly worse but had the advantage of being fully automated, which is why I chose to use this method for the normalisation stage.
 
 \subsubsection{Winsorising}
 The first normalisation that is applied to entire scans is called `winsorising'. The aim is to limit the values of extremes, in order to reduce the effect that outliers may have. This is also known as `clipping' in digital signal processing. I used a 98\% winsorisation, meaning that the data values below the 1\textsuperscript{st} percentile are set to the value of the 1\textsuperscript{st} percentile and the value above the 99\textsuperscript{th} percentile are set to the value of the 99\textsuperscript{th} percentile. Note that this process is different from trimming as the values are not discarded but just clipped.
@@ -428,7 +462,7 @@ The first normalisation that is applied to entire scans is called `winsorising'.
 \subsubsection{N4 Bias field correction}
 The second normalisation applied to scans is the N4 bias field correction \cite{n4itk}. MRI scanner can create a bias in which the intensity of the same tissue varies across the produced scan, making it hard for automated segmentation algorithms to recognise that it is in fact the same tissue. N4 is a variant of the popular nonparametric nonuniform intensity normalisation N3 which aims at eliminating this bias introduced by MRI scanners. 
 
-As this correction is rather complicated and not the main point of my project, I will not go into more details here. However, for completeness, table \ref{table:n4_params} lists the parameters I used to perform the normalisation. I first used the default parameters and later emailed the author of \cite{pereira} who kindly agreed to share the parameters he used in his published method, which are reported here. I used the implementation provided by the `Nipype'\footnote{\url{http://nipype.readthedocs.io/en/latest/}} and the `Advanced Normalization Tools'\footnote{\url{http://stnava.github.io/ANTs/}}.
+As this correction is rather complicated and not the main point of my project, I will not go into more details here. However, for completeness, table \ref{table:n4_params} lists the parameters I used to perform the normalisation. I first used the default parameters and later contacted Pereira who kindly agreed to share the parameters he used in his published method, which are reported here. I used the implementation provided by the `Nipype'\footnote{\url{http://nipype.readthedocs.io/en/latest/}} and the `Advanced Normalization Tools'\footnote{\url{http://stnava.github.io/ANTs/}}.
 
 \begin{table}[h]
 \centering	
@@ -472,92 +506,73 @@ The last step is to standardise the mean and variance for each scan along each s
 \begin{equation}
 	x' = \frac{x - \mu}{\sigma}
 \end{equation}
-As $\mathbb{E}[aX] = a \mathbb{E}[X]$ and $\textrm{Var} [cX] = c^2 \textrm{Var} [X]$ it is easy to see that after this transformation the new mean will be 0 and the standard deviation will be 1. Also note that as the true mean and standard deviation are not known, the sample mean and sample standard deviation must be used. 
+As $\mathbb{E}[aX] = a \mathbb{E}[X]$ and $\textrm{Var} [cX] = c^2 \textrm{Var} [X]$ one can show that after this transformation the new mean will be 0 and the standard deviation will be 1. Also note that as the true mean and standard deviation are not known, the sample mean and sample standard deviation must be used. 
 
-Similarly as for the linear scaling, I used numpy's \texttt{mean} and \texttt{std} functions and the fact that basic operations are done element-wise to implement this normalisation.
+I use numpy's \texttt{mean} and \texttt{std} functions and the fact that basic operations on numpy arrays are done element-wise to implement this normalisation.
 
-\section{Patch extraction}
+\subsection{Patch extraction}
 \label{section:patch_extraction}
-Each input to the neural network is a three-dimensional array, of shape $33 \times 33 \times 4$, since it consists of a two-dimensional patch of $33 \times 33$ voxels for each one of the 4 scan modalities. The two-dimensional patches are taken along the x--y axis, refer to as the axial plane in anatomy. Figure \ref{fig:patch_extraction} gives a diagramitc overview of the transformation for the simplified case with a single modality, meaning that the image array is three-dimensional and the resulting patch is two-dimensional, instead of four and three-dimensional respectively.
-
-\begin{figure}[h]
+Each input to the convolutional neural network is a three-dimensional array, of shape $\textsf{height} \times \textsf{width} \times 4$, since it consists of a two-dimensional patch of $\textsf{width} \times \textsf{height}$ voxels for each one of the 4 scan modalities. The two-dimensional patches are taken along the x--y axis, refer to as the axial plane in anatomy. Figure \ref{fig:patch_extraction} gives a diagramitc overview of the transformation for the simplified case with a single modality, meaning that the image array is three-dimensional and the resulting patch is two-dimensional, instead of four and three-dimensional respectively.
+\begin{figure}
 	\centering
 	\includegraphics[width=\textwidth]{patch_extraction}
-	\caption[Patch extraction process for a three dimensional array.]{Patch extraction process for a three dimensional array. The actual image array is four dimensional, the 4th dimension being the different modalities.}
+	\caption[Patch extraction process for a three dimensional array.]{Patch extraction process for a three dimensional array. The actual image array is four dimensional, the 4th dimension being the different modalities. Here $\textsf{width}=\textsf{height}=33$ and therefore corresponds to the patch size proposed by pereira et al.}
 	\label{fig:patch_extraction}
 \end{figure}
 
- 
-As explained in the previous chapter the data consists of 20 different patients, each consisting of 4 different MRI scans, taken with different modalities. Unfortunately, the size of the different scans varies from patient to patient. Table \ref{table:scan_sizes} shows how the sizes are distributed among patients. Because we are working with small individual patches, this discrepancy in scans sizes between patients has no impact, as long as each voxel has the same spatial resolution. This can be seen as one of the advantages of a model based on patches compared to a model based on slices or even entire MRI scans, as it offers more flexibility on the size of the MRI scans.
+There are two issues that need to be resolved before being able to extract the patches:
+\begin{enumerate}
+	\item The training data has to be balanced, meaning that the same number of examples for each class should be included in the training data. This is to ensure that the convolutional model is able to generalise well. However, the BraTS dataset is extremely unbalanced with over 98\% of the voxels belonging to class 0, as shown in table \ref{table:class_frequencies}. Therefore, simply randomly picking patches from the dataset does not work. Also note that a balanced dataset would limit the maximum number of patches we can extract to 5 times the number of voxels in the least represented class. This is the non-enhancing tumour class (class 3) with 184,436 labeled voxels, hence a maximum of 922,130 patches. To increase the number of different patches the network sees during training for the overrepresented classes while keeping the data balanced, I randomly resample at each epoch the same number of patches for each class from all possible patches for that class.
+		\begin{table}
+			\centering	
+			\begin{tabular}{c c S[table-format=9.0] S[table-format=2.2]}
+			\textbf{Class} & \textbf{Tissue type} & \textbf{Number of labeled voxels} & \textbf{frequency}\\
+			 \hline
+			0 & Non tumour 				& 138958832 	& 98.23 \% \\ 
+			1 & Necrosis 				& 282936 	& 0.20 \% \\ 
+			2 & Edema					& 1466271 	& 1.36 \% \\ 
+			3 & Non-enhancing tumour 	& 184436 	& 0.13 \% \\ 
+			4 & Enhancing tumour		& 560777 	& 0.34 \% \\
+			
+			\end{tabular}
+			\caption{Class frequencies in the BraTS2013 HG dataset. The normal tissue (class 0) is highly overrepresented, which leads to issues when training the convolutional neural network. We therefore have to balance the dataset when extracting the patches.}
+			\label{table:class_frequencies}
+		\end{table}
+	\item It is not possible to extract an entire patch around the voxels to close to the edge of the scan. To solve this issue there are two options: I could either ignore the patch entirely or pad the scan such that each labelled voxel is surrounded by enough voxels. Only the first option is considered as it is easier and helps with the balanced classes issue as most of the voxels close to an edge are from class 0. Furthermore, as the brains are centred within the MRI scans, voxels close to and edge are surrounded only by voxels of value 0, making the patch identical to many other patches close to an edge. Table \ref{table:valid_class_frequencies} shows the distribution of classes for ``valid'' voxels, .i.e those at least more than half the patch length away from the x or y edges for the Pereira model with $\textsf{width}=\textsf{height}=33$.
 
-\begin{table}[h]
-\centering	
-\label{table:scan_sizes}
-\begin{tabular}{ c c } 
-\textbf{Size} & \textbf{Number of scans}\\
- \hline
- $\ 176 \times 216 \times 160$ & 8 \\ 
- $\ 176 \times 216 \times 176$ & 6 \\ 
- $\ 230 \times 230 \times 162$ & 2 \\ 
- $\ 176 \times 236 \times 216$ & 1 \\ 
- $\ 165 \times 230 \times 230$ & 1 \\ 
- $\ 240 \times 240 \times 168$ & 1 \\ 
- $\ 220 \times 220 \times 168$ & 1 \\ 
+		\begin{table}[h]
+		\centering	
+		\begin{tabular}{c c S[table-format=9.0] S[table-format=2.2] S[table-format=8.0]}
+		\textbf{Class} & \textbf{Tissue type} & \textbf{Labelled voxels} & \textbf{Frequency} & \textbf{Ignored voxels}\\
+		 \hline
+		0 & Non tumour 				& 94773429 	& 97.45 \% & 44185403 \\ 
+		1 & Necrosis 				& 281831 	& 0.29 \% & 1105\\ 
+		2 & Edema					& 1453205 	& 1.49 \% & 13066\\ 
+		3 & Non-enhancing tumour 	& 183396 	& 0.19 \% & 1040\\ 
+		4 & Enhancing tumour		& 558320 	& 0.57 \% & 2457\\
+		\end{tabular}
+		\caption{Class frequencies in the BraTS2013 HG dataset for valid voxels only, that is, those voxels it is possible to extract a patch of size $33 \times 33$ around. As most of the ignored voxels are in class 0, we can safely ignore them.}
+		\label{table:valid_class_frequencies}
+		\end{table}
+\end{enumerate}
 
-\end{tabular}
-\caption{Scan sizes in voxels for the 20 different patients, dimensions are ordered as $(z \times y \times z)$}
-\end{table}
-
-As shown in table \ref{table:class_frequencies},  the dataset is extremely unbalanced with over 98\% of the voxels belonging to class 0. Because the training data for the convolutional neural network should be balanced, simply randomly picking patches from the dataset does not work. Instead, I need to extract the same number of patches for each class. Note that this implies that the maximum number of patches we can extract is 5 times the number of voxels in the least represented class, which is the non-enhancing tumour class with 184,436 labeled voxels, hence a maximum of 922,130 of patches. To increase the number of different patches the network is trained on while keeping the data balanced, I randomly resample at each epoch the patches for each class, making it much more likely that more different patch are used for the overrepresented classes.
-
-\begin{table}
-\centering	
-\begin{tabular}{c c S[table-format=9.0] S[table-format=2.2]}
-\textbf{Class} & \textbf{Tissue type} & \textbf{Number of labeled voxels} & \textbf{frequency}\\
- \hline
-0 & Non tumour 				& 138958832 	& 98.23 \% \\ 
-1 & Necrosis 				& 282936 	& 0.20 \% \\ 
-2 & Edema					& 1466271 	& 1.36 \% \\ 
-3 & Non-enhancing tumour 	& 184436 	& 0.13 \% \\ 
-4 & Enhancing tumour		& 560777 	& 0.34 \% \\
-
-\end{tabular}
-\caption{Class frequencies in the BraTS2013 HG dataset. The normal tissue (class 0) is highly overrepresented, which leads to issues when training the convolutional neural network. We therefore have to balance the dataset when extracting the patches.}
-\label{table:class_frequencies}
-\end{table}
-
-To handle the voxels that are too close to the edges of the image to extract an entire image around, there are two options: I could either ignore the patch or pad the scan such that each labelled voxel is surrounded by enough voxels. The first option is not only easier, but also helps with the balanced classes issue as most of the voxels close to an edge are from class 0 and are surrounded only by voxels of value 0, as the voxel is situated outside the brain, making the patch identical to many other patches close to an edge. This is because the brains are centred within the scans. Table \ref{table:valid_class_frequencies} shows the distribution of classes for ``valid'' voxels, .i.e those at least more than half the patch length away from the x or y edges.
-\begin{table}[h]
-\centering	
-\begin{tabular}{c c S[table-format=9.0] S[table-format=2.2] S[table-format=8.0]}
-\textbf{Class} & \textbf{Tissue type} & \textbf{Labelled voxels} & \textbf{Frequency} & \textbf{Ignored voxels}\\
- \hline
-0 & Non tumour 				& 94773429 	& 97.45 \% & 44185403 \\ 
-1 & Necrosis 				& 281831 	& 0.29 \% & 1105\\ 
-2 & Edema					& 1453205 	& 1.49 \% & 13066\\ 
-3 & Non-enhancing tumour 	& 183396 	& 0.19 \% & 1040\\ 
-4 & Enhancing tumour		& 558320 	& 0.57 \% & 2457\\
-\end{tabular}
-\caption{Class frequencies in the BraTS2013 HG dataset for valid voxels only, that is, those voxels it is possible to extract a patch of size $33 \times 33$ around. As most of the ignored voxels are in class 0, we can safely ignore them.}
-\label{table:valid_class_frequencies}
-\end{table}
-
-To sample the patches at each epoch more efficiently, before the first epoch, I created a list for each class containing the positions of the valid voxels for that class. Note that at this point it would be unfeasible to store the patches, as it would require to store over a 100 billion 32 bit floats for class 0 alone, or over 400 GB. To get the indices of the valid voxels, I used numpy's argwhere function on the ground truth arrays. The argwhere function takes in an array and a predicate and returns the indices of those elements in the array satisfying the predicate. Here, the predicate used is just equality checking between the voxel label and the class number. This is done for every patient and returns an array consisting of the $(z, y, x)$ coordinates of valid patches for every patient. Since the patient number must also be included in the indices, I prepended the patient number along the first axis, resulting for each patient in an array consisting of the $(\text{patient}, z, y, x)$ coordinates and aggregate the results for each patient into a single list. The second step consists of removing those voxels that are too close to an x-axis or y-axis edge. Only indices $(\text{patient}, z, y, x)$ where the x and y values are  within the allowed ranges defined by half the size of the patch: $[16, \text{size}-(16+1)]$ are kept. Again this can be done using numpy and filtering based on column values. Algorithm \ref{alg:patch_extraction} summarises the steps taken during the patch extraction.
+To make the resampling of the patches at each epoch more efficiently, I first create a list (\texttt{valid\_positions}) containing for each class the positions of the valid patches (really the position of the central voxel) for that class. Note that at this point it would be unfeasible to store all possible patches, as it would require to store over a 100 billion 32 bit floats for class 0 alone, or over 400 GB. To get the indices of the valid voxels, I used numpy's argwhere function on the ground truth arrays. The argwhere function takes in an array and a predicate and returns the indices of those elements in the array satisfying the predicate. I use equality checking between the voxel label and the class number. This is done for every patient and returns an array consisting of the $(z, y, x)$ coordinates of valid patches for every patient. Since the patient number must also be included in the indices, I prepend the patient number along the first axis, resulting for each patient in an array consisting of the $(\text{patient}, z, y, x)$ coordinates and aggregate the results for each patient into a single list. The second step consists of removing those voxels that are too close to an x-axis or y-axis edge. Only indices $(\text{patient}, z, y, x)$ where the x and y values are  within the allowed ranges defined by half the size of the patch: $[\lfloor \frac{\textsf{width}}{2} \rfloor, \textsf{width}_{\text{scan}} - \lceil \frac{\textsf{width}}{2} \rceil]$ and respectively for the height are kept. Again this can be done using numpy and filtering based on column values. Algorithm \ref{alg:patch_extraction} summarises the steps taken during the patch extraction.
 
 \begin{algorithm}[h]
 \caption{Patch extraction}\label{alg:patch_extraction}
 \begin{algorithmic}[1]
 \For{$\text{class } k \text{ in } [0,1,2,3,4]$}
-	\State valid\_indices[$k$] $\gets$ []
-	\For{\textbf{each} index, label \textbf{in} labels} 
-		\State possible\_indices $\gets$ \textit{numpy}.argwhere($label == k$)
+	\State valid\_positions[$k$] $\gets$ []
+	\For{\textbf{each} index \textbf{in} len(labels)}
+		\State label $\gets$ labels[index] 
+		\State possible\_indices $\gets$ \textit{numpy}.argwhere(label == $k$)
 		\State patient\_indices $\gets$ \textit{numpy}.full(\textit{len}(possible\_indices), index)
 		\State possible\_indices $\gets$ \textit{numpy}.append(patient\_indices, possible\_indices, axis = 1)
 		\State
-		\State possible\_indices $\gets$ possible\_indices[$\text{possible\_indices}[:,2] - 16 \ge 0$]
-		\State possible\_indices $\gets$ possible\_indices[$\text{possible\_indices}[:,2] + (16+1) < $ label.y\_dimension]
-		\State possible\_indices $\gets$ possible\_indices[$\text{possible\_indices}[:,3] - 16 \ge 0$]
-		\State possible\_indices $\gets$ possible\_indices[$\text{possible\_indices}[:,3] + (16+1) < $ label.x\_dimension]
+		\State possible\_indices $\gets$ possible\_indices[$\text{possible\_indices}[:,2] \ge \lfloor \frac{\textsf{height}}{2} \rfloor$]
+		\State possible\_indices $\gets$ possible\_indices[$\text{possible\_indices}[:,2] \leq \text{height}_{\text{label}} - \lceil \frac{\textsf{height}}{2} \rceil$]
+		\State possible\_indices $\gets$ possible\_indices[$\text{possible\_indices}[:,3] \ge \lfloor \frac{\textsf{width}}{2} \rfloor$]
+		\State possible\_indices $\gets$ possible\_indices[$\text{possible\_indices}[:,3]  \leq  \text{width}_{\text{label}} - \lceil \frac{\textsf{width}}{2} \rceil$]
 		\State
 		\State valid\_indices[$k$] $\gets$ possible\_indices
 	\EndFor
@@ -565,20 +580,20 @@ To sample the patches at each epoch more efficiently, before the first epoch, I 
 \end{algorithmic}
 \end{algorithm}
 
-\section{Data augmentation}
-To increase the amount of data available, some data augmentation techniques can be used. In typical applications of convolutional neural networks for image processing and computer vision tasks, translation and rotations are be used. Since the data consists entirely of two-dimensional patches, translation is useless as it would just result in a different patch, with a possibly different label. However, using rotations of the patches might give some performance improvements. Pereira et al. proposes the following variants in \cite{pereira}:
+At the beginning of each training epoch, I then randomly choose the same number of positions for each class from \texttt{valid\_positions} using numpy's \texttt{random.choice} function. For each position I extract the corresponding patch and label which are returned as training data.
+
+\subsection{Data augmentation}
+To increase the amount of data available, some data augmentation techniques can be used. In typical applications of convolutional neural networks for image processing and computer vision tasks, translation and rotations are be used. Since the data consists entirely of two-dimensional patches, translation is useless as it would just result in a different patch, with a possibly different label. However, using rotations of the patches might give some performance improvements. Pereira et al. propose the following variants in \cite{pereira}:
 \begin{enumerate}
 	\item No rotations
 	\item Rotations of 90, 180 and 270 degrees.
-	\item Uniformly sample three rotations from an array of equally spaced angles. The angle step proposed is $\frac{1}{16} \times 90^{\circ}$
+	\item Uniformly sample three rotations from an array of equally spaced angles. The angle step proposed is $\frac{1}{16} \times 90^{\circ} = 6^{\circ}$
 \end{enumerate}
-Pereira et al. reported that using rotations of multiples of 90 degrees performed the best, which is why I have decided to implement it. Keras is extremely useful as it allows the creation of `data generators' which given numpy arrays containing the training data and labels, can generate batches of augmented data in real-time during the training phase of the convolutional neural network. To perform the rotation in the generator, I used the numpy \texttt{rot90} function which rotates arrays by steps of 90 degrees.
+Pereira et al. reported that using rotations of multiples of 90 degrees performed the best, which is why I decided to implement it. I perform the rotations with a custom Keras `data generator'. Such a data generator receives as an input a batch of data and returns another batch of data. Here, the generator just randomly rotates each training patch in the batch using the numpy \texttt{rot90} function which rotates arrays by steps of 90 degrees.
 
-It is important to note that, as opposed to the patch extraction and the normalisation phases, the data augmentation is only done for the training data and not for the validation or test data.
+\subsection{Training: Pereira model}
 
-\section{Pereira model}
-
-\subsection{Architecture}
+\subsubsection{Architecture}
 
 The model proposed by Pereira et al. \cite{pereira} consists of 11 layers, shown in figure \ref{fig:pereira_model}. The first three layers are convolutional layers with filter size $3 \times 3$, stride $1 \times 1$ and width 64. Using three layers of size $3 \times 3$ consecutively effectively has a receptive field of size $7 \times 7$, but has fewer parameters then a single $7 \times 7$ convolutional layer would have, reducing the overall number of parameters and therefore making the network less prone to overfitting \cite{very_deep_conv_nets}. The next layer is a max pooling layer of size $3 \times 3$ and stride $2 \times 2$. This is an unusual design choice for convolutional networks as the size is typically smaller than the stride. Pereira et al. motivate this choice because although pooling can be positive to eliminate unwanted details and achieve invariance, it can also eliminate some of the important details. By keeping the size of the layer larger than the stride, the pooling will overlap which will allow the network to keep more information about location. Next, three more consecutive convolutional layers are applied, this time doubling the width to 128 filters. Again a max pooling layer with the same hyper-parameters as the previous one is applied, before adding three fully-connected layers of size 256, 256 and 5 respectively. Table \ref{table:pereira_weights} shows the model architecture in more details including the number of weights in each layer. 
 
@@ -616,21 +631,21 @@ FC			& $\quad 5 	\times\ 1 	\times\ 1$ 	& 1285\\
 
 The weights in the convolutional layers are initiliased using Xavier normal initialisation \cite{xavier_init}. The biases are initialised to the constant value 0.1, except for the last layer.
 
-The activation function used throughout the network is the leaky rectifier, with  $\alpha = 0.333$. \textit{However, using a leaky rectifier a rectifier has very little effect on the final results, as will be shown in the next chapter. ???}
+The activation function used throughout the network is the leaky rectifier, with  $\alpha = 0.333$.
 
 Of the three techniques presented in the preparation chapter to avoid overfitting, only Dropout \cite{dropout} is used in the fully-connected layers, with probability $p=0.1$ of removing a node from the network.
 
-\subsection{Implementation of the architecture in Keras}
-The network proposed by Pereira et al. is sequential, meaning that the layers are stacked linearly. Using the keras \texttt{Sequential} model is therefore the simplest way to implement it. The \texttt{Sequential} model makes it possible to create networks by adding layers to it sequentially, as the name suggests. The three types of layers used in the network have available Keras implementations, and therefore building the network itself was relatively straightforward. First, an instance a of a sequential model is instanciated:
+\subsubsection{Implementation of the architecture in Keras}
+The network proposed by Pereira et al. is sequential, meaning that the layers are stacked linearly. Using the keras \texttt{Sequential} model is therefore the simplest way to implement it. The \texttt{Sequential} model makes it possible to create networks by adding layers to it sequentially. The three types of layers used in the network have available Keras implementations, and therefore building the network itself was relatively straightforward. First, an instance a of a sequential model is instanciated:
 \begin{lstlisting}[language=Python]
 	model = Sequential()
 \end{lstlisting}
 Then, layers can be added by calling the \texttt{add} function on the model. For example to add a convolutional layer, we first create an instance of the \texttt{Convolution2D} class and then add it to the model:
 \begin{lstlisting}[language=Python]
-	conv = Convolution2D(nb_filters, size[0], size[1], border_mode='same', init='glorot_normal')
+	conv = Convolution2D(nb_filters, width, height, border_mode='same', init='glorot_normal')
 	model.add(conv)
 \end{lstlisting}
-The library makes it easy for the user to specify how the weights should be initialised, by setting the \texttt{init} argument. The \texttt{border\_mode} argument determines the size of the padding that is added to input before applying the convolutional layer. In our case the output of the layer should have the same size as the input, which is specified by setting the argument to `same'. Max pooling layers and fully-connected layers can be added similarly using instances of \texttt{MaxPooling2D} and \texttt{Dense} classes respectively.
+The library makes it easy for the user to specify how the weights should be initialised by setting the \texttt{init} argument. The \texttt{border\_mode} argument determines the size of the padding that is added to input before applying the convolutional layer. In our case the output of the layer should have the same size as the input, which is specified by setting the argument to `same'. Max pooling layers and fully-connected layers can be added similarly using instances of \texttt{MaxPooling2D} and \texttt{Dense} classes respectively.
 
 Activation functions are added in the same way as layers. Hence, to add a leaky rectifier, also called LReLU, we add an instance of the \texttt{LeakyReLU} class to the model:
 \begin{lstlisting}[language=Python]
@@ -650,8 +665,8 @@ Finally, before training the model, we need to specify which loss function and w
 	model.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy']
 \end{lstlisting}
 
-\subsection{Training}
-The paper specifies that the model was trained over 20 epochs, each training the network on 450,000 patches. As no more details are specified, I use 90,000 patches per class selected at random as explained in section \ref{section:patch_extraction}. The optimisation algorithm used is a standard stochastic gradient descent algorithm with Nesterov momentum, with constant momentum $\mu = 0.9$. The learning rate is linearly decreased from $3 \times 10^{-5}$ to $3 \times 10^{-7}$. As Keras does only have an implementation for exponential learning rate decay, I had to implement this myself. This can be done using algoritm \ref{alg:linear_decay}.
+\subsubsection{Training}
+The paper specifies that the model was trained over 20 epochs, each training the network on 450,000 patches. As no more details are specified, I use 90,000 patches per class selected at random as explained in section \ref{section:patch_extraction}. The optimisation algorithm used is a standard stochastic gradient descent algorithm with Nesterov momentum, with constant momentum $\mu = 0.9$. The learning rate is linearly decreased from $3 \times 10^{-5}$ to $3 \times 10^{-7}$. As Keras does only have an implementation for exponential learning rate decay, I use algoritm \ref{alg:linear_decay} to manually specify the learning rate at each epoch.
 
 \begin{algorithm}
 \caption{Model training with linear learning rate decay}
@@ -677,7 +692,10 @@ At the end of each epoch the loss function is evaluated on the validation data a
 	\label{fig:training_output}
 \end{figure}
 
-After training the model for 20 epochs, I save the model with its weights in a directory specified as an argument to the main python script. In figure \ref{fig:pereira_validation_loss} the validation loss and validation accuracy are plotted for the 20 epochs. Both seem to converge over this period. The validation accuracy is higher than the training accuracy because of Dropout: during validation, all neurons are used meaning that the model can classify the data better.
+After training the model for 20 epochs, I save the model with its weights in a directory specified as an argument to the main python script, so that I can reload the model for the segmentation of MRI scans. 
+
+In figure \ref{fig:pereira_validation_loss} the validation loss and validation accuracy are plotted for the 20 epochs. Both seem to converge over this period. The validation accuracy is higher than the training accuracy because of Dropout: during validation no neurons are dropped, meaning that the entire network is used which is therefore able to classify the data more accurately.
+
 \begin{figure}
 	\centering
 	\includegraphics[width=0.8\textwidth]{pereira_validation_loss}
@@ -685,15 +703,21 @@ After training the model for 20 epochs, I save the model with its weights in a d
 	\label{fig:pereira_validation_loss}
 \end{figure}
 
-\section{My model}
-\subsection{Architecture}
-The main differences between my model and the model proposed by Pereira et al. \cite{pereira} are: 
+\subsection{Training: My model}
+\subsubsection{Architecture}
+The design of the architecture for my model is based on the following points:
 \begin{enumerate}
-	\item I have decided to increase the size of the input patches, almost doubling it to $64 \times 64$. This is because a patch size of only $33 \times 33$ seems very small and could potentially miss important contextual clues from voxels slight further away in the slice.
-	\item To speed up the segmentation and to keep the number of weights reasonable, instead of only classifying the central voxel, the network classifies the central $8 \times 8$ voxels of a patch. The output of the network is therefore no longer a $5 \times 1$ array of the probabilities for each class. Instead, the output is now a $5 \times 64$ array that outputs the class probabilities for each voxel in the central $8 \times 8$ `subpatch' of the input. 
+	\item I increase the size of the input patches, almost doubling it to $64 \times 64$. Using this bigger patch, the model should be able to incorporate more contextual information from voxels further away in the slice for the classification. Figure \ref{fig:bigger_patches} shows the difference in patch size.
+		\begin{figure}
+			\centering
+			\includegraphics[width=0.4\textwidth]{bigger_patches}
+			\caption[Example patch for my model compared to a patch for the model proposed by Pereira et al. \cite{pereira}]{Example patch for my model compared to a patch for the model proposed by Pereira et al. \cite{pereira}. The patch for the Pereira model is drawn in red.}
+			\label{fig:bigger_patches}
+		\end{figure}
+	\item To speed up the segmentation and to prevent an explosion of the number of weights, instead of only classifying the central voxel, the network classifies the central $8 \times 8$ voxels of a patch. The output of the network is therefore no longer a $5 \times 1$ array of the probabilities for each class. Instead, the output is now a $5 \times 64$ array that outputs the class probabilities for each voxel in the central $8 \times 8$ `subpatch' of the input. 
 	\item I have decided to use Batch Normalisation instead of Dropout to regularise the network as it has been shown to work better and significantly speed-up the training process \cite{batch_normalization}. 
 	\item I also added a L2 regularisation penalty to the loss function as a further method to decrease the amount of overfitting done by my model.
-	\item The network is fully convolutional, meaning that there are only convolutional layers and no fully-connected layers. This choice can be justified by the following reasons:
+	\item The network is fully convolutional, meaning that there are only convolutional layers and no fully-connected layers. This choice is justified by the following reasons:
 	\begin{enumerate}
 		\item Because no fully-connected layers are used, which are usually those with the highest number of parameters, a fully convolutional neural network will have fewer parameters. It will therefore be less prone to overfitting.
 		\item The fully convolutional neural network is much faster to train and can predict outputs much faster, due to the fact that it mainly applies convolutions, which can be parallelised on a GPU. This combined with the fact that the output is an $8 \times 8$ patch, will greatly decrease the time necessary to segment a entire scan.
@@ -702,7 +726,7 @@ The main differences between my model and the model proposed by Pereira et al. \
 
 My model should therefore be able to predict classes much faster, using a larger context. The question is how using a larger output and a fully-convolutional network will affect the performance of the model. This will be discussed in the Evaluation chapter.
 
-The model contains 13 layers, shown in table \ref{table:my_model}. All convolutional layers have filter size $3 \times 3$ and stride $1 \times 1$. The width of the filters is increased as the output shape decreases to allow the network to model more complex features. Max pooling layers are applied every 2--3 convolutional layers, to reduce the spatial input for the following layers. It is important to note that there are no fully-connected layers. Instead, convolutional layers and max pooling layers are applied until we have achieved the correct dimension of $5 \times 8 \times 8$. At this point, we have to flatten the input into a single two-dimensional array of size $5 \times 64$, onto which we can apply a softmax activation to obtain normalised class probability distribution for each one of the central 64 voxels. The kernel weights are initiased using a Xavier normal heuristic \cite{xavier_init}. The biases are all initialised to 0.
+My model contains 13 layers, shown in table \ref{table:my_model}. All convolutional layers have filter size $3 \times 3$ and stride $1 \times 1$. The width of the filters is increased as the output shape decreases to allow the network to model more complex features. Max pooling layers are applied every 2--3 convolutional layers, to reduce the spatial input for the following layers. It is important to note that there are no fully-connected layers. Instead, convolutional layers and max pooling layers are applied until we have achieved the correct dimension of $5 \times 8 \times 8$. At this point, we have to flatten the input into a single two-dimensional array of size $5 \times 64$, onto which we can apply a softmax activation to obtain normalised class probability distribution for each one of the central 64 voxels. The kernel weights are initiased using a Xavier normal heuristic \cite{xavier_init}. The biases are all initialised to 0.
 
 \begin{table}[h]
 \centering	
@@ -724,14 +748,14 @@ Max-Pool 	& $256 		\times\ 8 	\times\ 8$	& 0\\
  Conv 		& $5 		\times\ 8 	\times\ 8$ 	& 11525 \\ 
 \hhline{~~=}
 \rule{0pt}{3ex}    
-&& 2118213\\
+&& 2485253\\
 \end{tabular}
 \caption[Summary of my convolutional neural network architecture, including the number of parameters in each layer.]{Summary of my convolutional neural network architecture, including the number of parameters in each layer.}
 \label{table:my_model}
 \end{table}
 
-\subsection{Implementation}
-The implementation of my model very similar to how I implemented the model proposed by Pereira et al. This is the main advantage of using a library such as Keras. However, there is a subtlety that arises from the fact that the network is fully-convolutional. The output of the last layer is a three-dimensional array of size $5 \times 8 \times 8$ but the softmax activation can only take as an argument two-dimensional arrays. Therefore, I have to reshape the array into a $64 \times 5$ array before applying the softmax activation. Keras makes this operation easy with the \texttt{Reshape} and \texttt{Permute} layers:
+\subsubsection{Implementation}
+The implementation of my model is similar to how I implemented the model proposed by Pereira et al. This is the main advantage of using a library such as Keras. However, there is a subtlety that arises from the fact that the network is fully-convolutional. The output of the last layer is a three-dimensional array of size $5 \times 8 \times 8$ but the softmax activation can only take as an argument two-dimensional arrays. Therefore, I have to reshape the array into a $64 \times 5$ array before applying the softmax activation. Keras makes this operation easy with the \texttt{Reshape} and \texttt{Permute} layers:
 \begin{lstlisting}[language=Python]
 	model.add(Reshape((5, 64)))
 	model.add(Permute((2,1)))
@@ -745,15 +769,15 @@ Similarly, using Batch Normalisation is easy in Keras, as it has a \texttt{Batch
 	model.add(LeakyReLU(alpha))
 \end{lstlisting}
 
-\subsection{Training}
+\subsubsection{Training}
 I trained my model over 40 epochs, for each epoch training the network on 100,000 patches, 20,000 for each class. To minimise the loss function I use the Adaptive Moment Estimation method (adam) \cite{adam} which is a stochastic gradient descent method that computes adaptive learning rates for each parameter. This method is implemented in Keras and can therefore be specified when compiling the model as follows:
 \begin{lstlisting}[language=Python]
 	adam = Adam()
     model.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['accuracy'])
 \end{lstlisting}
 
-\section{Segmentation}
-After the model has been trained, the next step is to segment entire scans to either validate the model, inspect how it behaves or to submit the segmentations to the online platform for evaluation. First, the scan has to be cut into patches such that every voxel is covered by the central voxels and can therefore be classified by the convolutional neural network. The result of classifying each of those patches then has to be put back into a single three-dimensional scan, which is the resulting segmentation.
+\section{Segmenting MRI scans}
+The first stage, normalising the scans, is identical to the first stage for training the model and is independent of the model used to segment the scans. The patch extraction is however different, as the patches have to be extracted such that every voxel in the input scan can be classified by the model. As the implementation of this is more complicated for my model, I describe the implementation of the patch extraction and the segmentation stages independently for the two models.
 
 \subsection{Pereira model}
 For the model proposed by Pereira et al. \cite{pereira}, the convolutional neural network can be modelled as a function classifying the central voxel of a patch of size $33 \times 33 \times 4$. In this case, the segmentation of a patient is equivalent to convolving the convolutional neural network on each of the two-dimensional slices of the input images. The images must however be zero-padded around the x and y edges so as to keep the dimensions of the segmentation the same as the dimensions of the input images. Hence the steps are:
@@ -805,7 +829,7 @@ As my model classifies the central $8 \times 8$ voxels for each input patch, the
 \end{enumerate}
 
 
-\section{Data post-processing}
+\section{Segmentation post-processing}
 After the new patient has been segmented, a further simple heuristic is used to remove small volumes of data labeled as non normal tissue, based on the assumption that the tumour or tumours will be connected into components of relatively large size. Pereira et al \cite{pereira} proposed to remove all connected components of less than 10,000 voxels in volumes.
 
 I implement this heuristic using a depth first search on the graph represented by a scan, where each voxel is a vertex and share an edge with its 6 immediate neighbours (or less if it is on an edge). First, I create a second 3-dimensional array of the same size as the scan and mark all voxels with a 1 for which the corresponding voxel in the segmentation has value 0. This will allow us to remember which voxels have already been visited. Then the algorithm iterates the following steps until all voxels have been visited:
@@ -834,6 +858,9 @@ Finally, I iterate over the list of connected components, finding those which ha
 \end{figure}
 
 \chapter{Evaluation (+ Conclusion [20\%])}
+
+\section{Unit Tests}
+TODO
 
 \section{BraTS evaluation}
 \subsection{Evaluation metrics}
@@ -959,7 +986,7 @@ Finally, I also submitted my segmentations to the online evaluation platform whi
 \end{figure}
 
 \subsection{Effect of training duration}
-Pereira et al. trained this model for 20 epochs on about 450,000 patches per epoch. In figure \ref{fig:pereira_validation_loss}, I plotted the validation loss and the validation accuracy obtained on 500 patches for each class. Since the validation data is balanced, it does make sense to examine the accuracy as well as the other metrics. However, the increase in validation accuracy does not necessarily mean that the dice score improves as well. To investigate how the dice score changes as the model is further trained, I saved the model after each epoch, meaning that it can be used to segment scans. In figure \ref{fig:mean_dice_over_time} I plotted the mean dice scores obtained for the challenge dataset for different epochs. SAY SOMETHING ABOUT WHAT IS TO SEE IN THAT PLOT.
+Pereira et al. trained this model for 20 epochs on about 450,000 patches per epoch. In figure \ref{fig:pereira_validation_loss}, I plotted the validation loss and the validation accuracy obtained on 500 patches for each class. Since the validation data is balanced, it does make sense to examine the accuracy as well as the other metrics. However, the increase in validation accuracy does not necessarily mean that the dice score improves as well. To investigate how the dice score changes as the model is further trained, I saved the model after each epoch, meaning that it can be used to segment scans. In figure \ref{fig:mean_dice_over_time} I plotted the mean dice scores obtained for the challenge dataset for different epochs. SAY SOMETHING ABOUT WHAT IS TO SEE IN THAT PLOT. TODO
 
 \begin{figure}
 	\centering
@@ -988,6 +1015,13 @@ Finally, to get more insights into how the model behaves, I decided to segment 1
 \caption{Confusion matrix for 11 scans taken from the BraTS 2015 dataset}
 \label{table:confusion_pereira}
 \end{table}
+
+\subsection{Effect of various components}
+ADAM
+No Rotations
+ReLu
+
+
 \section{Evaluation of my model}
 Table \ref{table:my_model_dice_results} shows the results I obtained using my fully-convolutional model on the 10 images included in the challenge dataset.
 
