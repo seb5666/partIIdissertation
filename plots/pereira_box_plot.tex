@@ -1,0 +1,58 @@
+% This file was created by matplotlib2tikz v0.6.6.
+\begin{tikzpicture}
+
+\begin{axis}[
+xmin=0, xmax=4,
+ymin=0, ymax=1,
+axis on top,
+width=\figurewidth,
+height=\figureheight,
+xtick={1,2,3},
+xticklabels={Complete,Core,Enhancing},
+tick pos=both,
+legend style={at={(0.03,0.03)}, anchor=south west},
+legend cell align={left},
+legend entries={{Min value},{Max value},{Mean value with std}}
+]
+\path [draw=blue] (axis cs:1,0.757997136612514)
+--(axis cs:1,0.851199263387485);
+
+\path [draw=blue] (axis cs:2,0.388105524055728)
+--(axis cs:2,0.923100175944272);
+
+\path [draw=blue] (axis cs:3,0.24529284371699)
+--(axis cs:3,0.76972003628301);
+
+\addplot [blue, mark=-, mark size=3, mark options={solid}, only marks]
+table {%
+1 0.757997136612514
+2 0.388105524055728
+3 0.24529284371699
+};
+\addplot [blue, mark=-, mark size=3, mark options={solid}, only marks]
+table {%
+1 0.851199263387485
+2 0.923100175944272
+3 0.76972003628301
+};
+\addplot [blue, mark=*, mark size=3, mark options={solid,draw=black}, only marks]
+table {%
+1 0.8045982
+2 0.65560285
+3 0.50750644
+};
+\addplot [red, mark=x, mark size=3, mark options={solid}, only marks]
+table {%
+1 0.72251
+2 0.0349435
+3 0.0343374
+};
+\addplot [red, mark=x, mark size=3, mark options={solid}, only marks]
+table {%
+1 0.881144
+2 0.88342
+3 0.840119
+};
+\end{axis}
+
+\end{tikzpicture}

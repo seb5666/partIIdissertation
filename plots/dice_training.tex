@@ -1,0 +1,88 @@
+% This file was created by matplotlib2tikz v0.6.6.
+\begin{tikzpicture}
+
+\begin{axis}[
+xlabel={Epoch},
+ylabel={Dice score},
+xmin=0, xmax=20,
+ymin=0, ymax=0.8,
+axis on top,
+width=\figurewidth,
+height=\figureheight,
+tick pos=both,
+legend entries={{Complete region},{Core},{Enhancing}},
+legend style={at={(0.03,0.97)}, anchor=north west},
+legend cell align={left}
+]
+\addplot [blue]
+table {%
+1 0.6917
+2 0.7285
+3 0.7345
+4 0.7441
+5 0.7638
+6 0.7661
+7 0.7739
+8 0.7869
+9 0
+10 0.7885
+11 0
+12 0
+13 0
+14 0
+15 0.7922
+16 0.7877
+17 0.7932
+18 0.7905
+19 0.7935
+20 0.7922
+};
+\addplot [green!50.0!black]
+table {%
+0 0.6776
+1 0.6539
+2 0.6179
+3 0.5955
+4 0.6021
+5 0.6063
+6 0.611
+7 0.6155
+8 0
+9 0.6318
+10 0
+11 0
+12 0
+13 0
+14 0.6235
+15 0.5985
+16 0.6274
+17 0.6166
+18 0.6266
+19 0.6228
+};
+\addplot [red]
+table {%
+0 0.6113
+1 0.5439
+2 0.4915
+3 0.488
+4 0.4772
+5 0.4877
+6 0.4713
+7 0.4829
+8 0
+9 0.5151
+10 0
+11 0
+12 0
+13 0
+14 0.4784
+15 0.4615
+16 0.4877
+17 0.491
+18 0.498
+19 0.4915
+};
+\end{axis}
+
+\end{tikzpicture}
