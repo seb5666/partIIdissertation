@@ -10,9 +10,9 @@ height=\figureheight,
 xtick={1,2,3},
 xticklabels={Complete,Core,Enhancing},
 tick pos=both,
-legend style={at={(0.03,0.03)}, anchor=south west},
 legend cell align={left},
-legend entries={{Min value},{Max value},{Mean value with std}}
+legend style={at={(0.03,0.03)}, anchor=south west},
+legend entries={{Results reported by Pereira},{Mean value with std for my implementation}}
 ]
 \path [draw=blue] (axis cs:1,0.757997136612514)
 --(axis cs:1,0.851199263387485);
@@ -43,15 +43,9 @@ table {%
 };
 \addplot [red, mark=x, mark size=3, mark options={solid}, only marks]
 table {%
-1 0.72251
-2 0.0349435
-3 0.0343374
-};
-\addplot [red, mark=x, mark size=3, mark options={solid}, only marks]
-table {%
-1 0.881144
-2 0.88342
-3 0.840119
+1 0.8
+2 0.78
+3 0.73
 };
 \end{axis}
 
