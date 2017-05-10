@@ -28,10 +28,10 @@ history = {
     'loss': [1.130413912908766, 0.86106169440375435, 0.76787904865476819, 0.7182502047665914, 0.68715387994342381, 0.65751240613513517, 0.63839559453540373, 0.61914505914900042, 0.6031787941847907, 0.58809072117275663, 0.57666820398754548, 0.56690747420840792, 0.55915147215949168, 0.55212442444907295, 0.54601055546442667, 0.54380677711698744, 0.5381342763731215, 0.53504091784159347, 0.53354985645294184, 0.531543177839915]}
 
 x = np.arange(1, len(history['loss']) + 1)
+plt.plot(x, history['loss'], '-',  label="training loss")
 plt.plot(x, history['val_loss'], '-',  label="validation loss")
-plt.plot(x, history['loss'], '-',  label="loss")
-plt.plot(x, history['val_acc'], '-',  label="valdiation accuracy")
-plt.plot(x, history['acc'], '-',  label="accuracy")
+plt.plot(x, history['acc'], '-',  label="training accuracy")
+plt.plot(x, history['val_acc'], '-',  label="validation accuracy")
 plt.xlabel('Training epoch')
 plt.legend(loc='upper right')
 plt.xlim((1,len(history['loss'])))
