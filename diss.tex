@@ -90,6 +90,7 @@ Fitzwilliam College \\[5mm]
 
 \pagestyle{plain}
 
+%TC:ignore
 \chapter*{Proforma}
 
 {\large
@@ -98,13 +99,14 @@ Name:               & \bf Sebastian Borgeaud dit Avocat                       \\
 College:            & \bf Fitzwilliam College                     \\
 Project Title:      & \bf Brain tumour segmentation using Convolutional Neural Networks\\
 Examination:        & \bf Computer Science Tripos -- Part II, June 2017  \\
-Word Count:         & \bf 11,594  \\
+Word Count:         & \bf 11,978\footnotemark[1]
+  \\
 Project Originator: & Duo Wang                    \\
 Supervisor:         & Dr. Mateja Jamnik \& Duo Wang                    \\ 
 \end{tabular}
 }
 \footnotetext[1]{This word count was computed
-by \texttt{detex diss.tex | tr -cd '0-9A-Za-z $\tt\backslash$n' | wc -w}
+by \texttt{texcount -sum -sub=chapter diss.tex}
 }
 \stepcounter{footnote}
 \section*{Original aims of the project}The main success criteria for this project was to implement an algorithm based on a convolutional neural network that performs brain tumour segmentation. The second aim was to achieve similar results to those obtained by Pereira et al.\ \cite{pereira}, the current \mbox{state-of-the-art}, in particular obtaining 90\% of the accuracy reported. This means achieving the Dice scores (0.79, 0.73, 0.67) for the regions `complete' (including classes 2–-4), ‘core’ (classes 3–-4) and ‘enhancing’ (class 4) in the BraTS2013 challenge \cite{brats-proceedings}, respectively.
@@ -131,17 +133,20 @@ extent for a comparable purpose.
 
 \tableofcontents
 
-\listoffigures
+{\listoffigures \let\cleardoublepage\clearpage \listoftables}
+
 
 \newpage
 
 \setlength{\parskip}{1em} %Add vertical space between paragraphs.
 
 \section*{Acknowledgements}
-I would like to thank my supervisors, Dr. Mateja Jamnik and Duo Wang, for proposing this project to me, and for patiently providing assistance and answering my questions throughout the project. Moreover, I would also like to thank the Computational Biology group in the Computer Lab for giving me access to one of their GPUs. Then, I would like to thank my Director of Studies, Dr. Robert Harle, who read an early version of this dissertation and provided useful feedback. Finally, I would also like to thank Sergio Pereira for sharing the parameters and heuristics he had used in his implementation.
+I would like to thank my supervisors, Dr. Mateja Jamnik and Duo Wang, for proposing this project to me, and for patiently providing assistance and answering my questions throughout the project. Moreover, I would also like to thank the Computational Biology group in the Computer Lab for giving me access to one of their GPUs. Then, I would like to thank my Director of Studies, Dr. Robert Harle, who read an early version of this dissertation and provided useful feedback. Finally, I would also like to thank Sergio Pereira for sharing with me the parameters and heuristics he had used in the implementation of his model.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % now for the chapters
+
+%TC:endignore
 
 \pagestyle{headings}
 
@@ -164,7 +169,7 @@ Generative methods rely on domain-specific prior knowledge, and combine that kno
 
 On the other hand, discriminative methods use very little prior knowledge on the brain's anatomy. After the extraction of low level image features using manually annotated images, discriminative models learn directly how to model the relationship between these features and the label of a given voxel. The features used vary across methods: Hamamci et al.\ \cite{hamamci} used raw input pixels, for example, and Kleesiek et al.\ \cite{kleesiek} used local histograms. The methods usually train a classifier that relies on these hand-designed features. These features are assumed to have a sufficiently high discriminative power so that the classifier can learn to separate the tissue into the appropriate classes. The problem with such \mbox{hand-designed} features is that by their nature they are generic, with no specific adaptation to the domain of brain tumours. Ideally, these low-level features should be composed into higher-level and more task-specific features. Convolutional neural networks do this to some extent; starting from the raw input data, they extract increasingly more complex features using the features computed by the previous layer in the network.
 
-Zikic et al.\ \cite{zikic} first proposed a convolutional neural network with two convolutional layers followed by a fully-connected layer for brain tumour segmentation. The inputs to the network were patches of size $19 \times 19$ taken from slices of the scans. Thus, only a two-dimensional convolutional neural network is required which is much more efficient than a three-dimensional one and is less prone to overfitting. Building on this approach, Havaei et al.\ \cite{havaei} used a novel double-pathway architecture and a cascade of two networks to rank second on the BraTS2015 challenge. Novel in their approach was also the training of the network in two phases, first sampling patches from an equiprobable distribution before training only the fully-connected layers on data sampled using proportions near the originals. Pereira et al.\ \cite{pereira} proposed a deeper two-dimensional convolutional neural network of 11 layers, that ranked first in the BraTS2013 challenge. As the aim of my project is to replicate this method, the details are explained in the Preparation and Implementation chapters. 
+Zikic et al.\ \cite{zikic} first proposed a convolutional neural network with two convolutional layers followed by a fully-connected layer for brain tumour segmentation. The inputs to the network were patches of size $19 \times 19$ taken from slices of the scans. Thus, only a two-dimensional convolutional neural network is required which is much more efficient than a three-dimensional one and is less prone to overfitting. Building on this approach, Havaei et al.\ \cite{havaei} used a novel double-pathway architecture and a cascade of two networks to rank second on the BraTS2015 challenge. Novel in their approach was also the training of the network in two phases, first sampling patches from an equiprobable distribution before training only the fully-connected layers on data sampled using proportions near the originals. Pereira \cite{pereira} proposed a deeper two-dimensional convolutional neural network of 11 layers, that ranked first in the BraTS2013 challenge. As the aim of my project is to replicate this method, the details are explained in the Preparation and Implementation chapters. 
 
 Finally, it is worth noting that some of the more recent approaches have successfully overcome the difficulties involved in training three-dimensional neural networks. In particular, the model proposed by Kamnitsasa et al.\ \cite{kamnitas} used a three-dimensional convolutional neural network with residual connections \cite{resnet} to take the first place in the BraTS2015 challenge.
 
@@ -197,29 +202,31 @@ We can therefore reformulate the segmentation problem as the problem of learning
 \end{figure}
 
 \section{Dissertation outline}
-The rest of the dissertation is structured as follows: in the Preparation chapter I will explain how convolutional neural networks can be used to solve a supervised learning task. I will also give more details on how the data is structured and where it comes from. Then, in the Implementation chapter, I will go over how I transform the data into a format that can be used to train a convolutional neural network, and how I implement the convolutional neural network proposed by Pereira et al.\ \cite{pereira}. I will also present the architecture of my new model. Then, I will explain in more detail how I use the model to segment a scan efficiently. Finally, I will detail how I implement the post-processing step based on connected components. In the Evaluation chapter, I will go over how segmentations can be evaluated quantitatively and will evaluate both models.
+The rest of the dissertation is structured as follows: in the Preparation chapter I will explain how convolutional neural networks can be used to solve a supervised learning task. I will also give more details on how the data is structured and where it comes from. Then, in the Implementation chapter, I will go over how I transform the data into a format that can be used to train a convolutional neural network, and how I implement the convolutional neural network proposed by Pereira \cite{pereira}. I will also present the architecture of my new model. Then, I will explain in more detail how I use the model to segment a scan efficiently. Finally, I will detail how I implement the post-processing step based on connected components. In the Evaluation chapter, I will go over how segmentations can be evaluated quantitatively and will evaluate both models.
 
 \chapter{Preparation}
 
 \section{Starting point}
 \subsection{Theory}
-The starting point for this project was the part IB course `Artificial Intelligence I'. In particular, neural networks, backpropagation and stochastic gradient descent were introduced, concepts also used in convolutional neural networks. Secondly, the course also provided a brief introduction to machine learning and formalised the task of supervised learning.
+The starting point for this project was the part IB course `Artificial Intelligence I'. Neural networks, backpropagation and stochastic gradient descent were introduced, concepts also used in convolutional neural networks. The course also provided a brief introduction to machine learning and formalised the task of supervised learning.
 
-Second, I was able to use some of the material taught by the part II course `Machine Learning and Bayesian Inference', especially those parts on the evaluation of classifiers and on general techniques for machine learning.
+The part II course 'Machine Learning and Bayesian Inference' had sections on the evaluation of classifiers and on general techniques for machine learning which were also useful.
+%I was able to use some of the material taught by the part II course `Machine Learning and Bayesian Inference', especially those parts on the evaluation of classifiers and on general techniques for machine learning.
 
-I learned the remaining theory through self study at the start of the project, using as main resource the Stanford course `CS231n Convolutional Neural Networks for Visual Recognition'\footnote{\url{http://cs231n.github.io/}}.
+I learned the remaining theory through self study, using as main resource the Stanford course `CS231n Convolutional Neural Networks for Visual Recognition'\footnote{\url{http://cs231n.github.io/}}.
 \subsection{Programming languages \& libraries}
-The project was almost entirely written in Python, except the computing jobs for the Cambridge High Performance Cluster, which are bash scripts. I had only used Python before for very small, single file projects and had to learn how Object Oriented Programming is handled in Python and some of the more advanced features. I also heavily used the Numpy\footnote{\url{http://www.numpy.org/}} library, which I had not used before.
+The project was almost entirely written in Python, except the computing jobs for the Cambridge High Performance Cluster, which are bash scripts. I had only used Python before for small projects and had to learn how Object Oriented Programming is handled in Python and some of the more advanced features. I also heavily used the Numpy\footnote{\url{http://www.numpy.org/}} library, which I had not used before.
 
 To load in the scans, which are in MetaImage medical format (`.mha') I used the SimpleITK\footnote{\url{https://itk.org/Wiki/SimpleITK}} library for python.
 
-Finally, I used the Keras\footnote{\url{https://keras.io/}} library, which makes it easy to create and train convolutional neural networks while leaving all important design and architectural decisions to the user. As Keras is becoming one of the standard open-source library in deep learning research and applications, many online resources were available when needed.
+Finally, I used the Keras\footnote{\url{https://keras.io/}} library, which makes it easy to create and train convolutional neural networks while leaving all important design and architectural decisions to the user. 
+%As Keras is becoming one of the standard open-source library in deep learning research and applications, many online resources were available when needed.
 
 \subsection{Graphical processing unit (GPU)}
-To train the convolutional neural network in a reasonable amount of time, I needed a computer with an external GPU. Initially, I used the Wilkes Cluster\footnote{\url{https://www.hpc.cam.ac.uk/services/wilkes}} from the Cambridge University High Performance Computing services, which is equipped with NVIDIA K20 GPUs. From February 23\textsuperscript{rd} 2017, I was able to use the TITAN X GPUs from the Computational Biology group in the Computer Lab. This reduced the training time for the model proposed by Pereira et al.\ from about 12 hours to 2--3 hours.
+To train the convolutional neural network in a reasonable amount of time, I used the Wilkes Cluster\footnote{\url{https://www.hpc.cam.ac.uk/services/wilkes}} from the Cambridge University High Performance Computing services, which is equipped with NVIDIA K20 GPUs. From February 23\textsuperscript{rd} 2017, I was able to use the TITAN X GPUs from the Computational Biology group in the Computer Lab. This reduced the training time for the model proposed by Pereira from about 12 hours to 2--3 hours.
 
 \section{Software engineering}
-Training a model and using that model to segment new scans can conceptually be divided into different stages. These processes can therefore be modelled as two data pipelines, one for the training and one for the segmentation, where each stage takes as an input the output of the previous stage. The pipeline for training the model and the pipeline for segmenting an MRI scan are shown respectively in Figures \ref{fig:training_implementation_pipeline} and \ref{fig:segmentation_implementation_pipeline}.
+Training a model and using that model to segment new scans can conceptually be divided into different stages. Training the model and segmenting scans can therefore be modelled as two data pipelines, where each stage takes as an input the output of the previous stage. The pipeline for training the model and the pipeline for segmenting an MRI scan are shown respectively in Figures \ref{fig:training_implementation_pipeline} and \ref{fig:segmentation_implementation_pipeline}.
 
 \begin{figure}
 	\centering
@@ -235,17 +242,17 @@ Training a model and using that model to segment new scans can conceptually be d
 	\label{fig:segmentation_implementation_pipeline}
 \end{figure}
 
-I use a waterfall like approach for the implementation, building and testing the different stages independently. All stages except the scan normalisation and the post-processing are model dependent. Instead of reimplementing each stage twice, once for the model proposed by Pereira et al. and once for the model I propose, I implement each stage only once in such a way that the model-dependent aspects can be specified by parameters. This flexibility is especially important as it makes rapid experimentation with many different model architectures possible.
+I use a waterfall like approach for the implementation, building and testing the different stages independently. All stages except the scan normalisation and the post-processing are model dependent. Instead of reimplementing each stage twice, once for the model proposed by Pereira and once for the model I propose, I implement each stage only once in such a way that the model-dependent aspects can be specified by parameters. This flexibility is especially important as it makes rapid experimentation with many different model architectures possible.
 
-It is important to note that division into sequential stages provides a nice way of modularising the code base, but it is mainly conceptual. In practice, due to the large amount of data, it cannot flow in this manner. For example, in the patch extraction phase for the segmentation, it would not be possible to load all patches in memory at once. Therefore the patches are extracted and segmented slice-by-slice. The implementation of these stages is described in the next chapter.
+It is important to note that division into sequential stages provides a nice way of modularising the code base, but it is mainly conceptual. In practice, due to the large amount of data, it cannot flow in this manner. For example, in the patch extraction phase for the segmentation, it would not be possible to load all patches in memory at once. The implementation details of these stages is described in the next chapter.
 
-I used Git as a version control system as I was already familiar with it. The repository is stored locally and in a private GitHub repository in the cloud. I pushed the contents of the local repository to GitHub after most commits, at least once a day. Furthermore, as an additional backup strategy I regularly backed up the local repository to my external hard disk.
+I used Git as a version control system as I was already familiar with it. The repository is stored locally and in a private GitHub repository. I pushed the contents of the local repository to GitHub after most commits. Furthermore, as an additional backup strategy I regularly backed up the local repository to my external hard disk.
 
 \section{Theoretical background}
 \subsection{Artificial neural networks}
-To understand how convolutional neural networks work, we first need to be familiar with ordinary neural networks. These consist of a sequence of layers of neurons, in which each neuron has a set of trainable weights that can be adjusted to change the overall function computed by the neural network. An example of the structure of such a neural network can be found in figure \ref{fig:nn_layout}. Each neuron in layer $n+1$ is connected to every neuron in layer $n$ and computes as an output
+To understand how convolutional neural networks work, we first need to be familiar with ordinary neural networks. These consist of a sequence of layers of neurons, in which each neuron has a set of trainable weights that can be adjusted to change the overall function computed by the neural network. An example architecture of a neural network is shown diagrammatically in Figure \ref{fig:nn_layout}. Each neuron in layer $n+1$ is connected to every neuron in layer $n$ and computes as an output
 \[y = f_{act}((\sum_{i=1}^{n} y_i w_i) + b)\]
-where $f_{act}$ is a non-linear, differentiable activation function and $y_i$ is the output of neuron $i$ in the previous layer. A neuron is connected to every neuron in the previous layer, which is why this layer is also called a fully-connected layer.
+where $f_{act}$ is a non-linear, differentiable activation function and $y_i$ is the output of neuron $i$ in the previous layer. A neuron is connected to every neuron in the previous layer, which is why this layer is also called a \textbf{fully-connected layer}.
 
 \begin{figure}
 	\centering
@@ -257,15 +264,15 @@ where $f_{act}$ is a non-linear, differentiable activation function and $y_i$ is
 \subsubsection{Activation functions}
 The most common activation functions are:
 \begin{enumerate}
-\item the Sigmoid function
+\item The Sigmoid function
 \begin{equation}
 S(x) = \frac{1}{1 + e^x} 
 \end{equation}
-\item the hyperbolic tangent
+\item The hyperbolic tangent
 \begin{equation}
 	\textrm{tanh}(x)=\frac{e^x - e^{-x}}{e^x + e^{-x}}
 \end{equation}
-\item the rectifier
+\item The rectifier
 \begin{equation}
 \label{eq:linear_rectifier}
 	f(x) = 
@@ -274,7 +281,7 @@ S(x) = \frac{1}{1 + e^x}
 	x & \text{otherwise}
 \end{cases}
 \end{equation}
-\item and the leaky rectifier, for $0 < \alpha < 1$
+\item The leaky rectifier, with $0 < \alpha < 1$
 \begin{equation}
 f(x) = 
 \begin{cases}
@@ -317,16 +324,16 @@ These functions are plotted in figure \ref{fig:activation_functions}.
 	\caption{Plot of the activation functions.}
 	\label{fig:activation_functions}
 \end{figure}
-Historically, the hyperbolic tangent function or the sigmoid function were mainly used. However, the magnitude of the gradients of these two activation functions is always below 1. This causes a numerical issue for deeper networks, as the gradients for each layer are multiplied together during the backpropagation algorithm. This is known as the vanishing gradient problem \cite{vanishing_gradients} and is the reason why nowadays it is preferred to use the rectifier or the leaky rectifier functions, especially with deeper architectures.
+Historically, the hyperbolic tangent function or the sigmoid function were mainly used. However, the magnitude of the gradients of these two activation functions is always below 1. This causes a numerical issue for deeper networks, as the gradients for each layer are multiplied together during the backpropagation algorithm. This is known as the vanishing gradient problem \cite{vanishing_gradients} and is the reason why nowadays it is preferred to use the rectifier or the leaky rectifier functions.
 
-In a classification problem, the output layer usually consists of $K$ nodes, one for each class. Using a softmax activation function for the last layer, we can interpret the value at each node as the probability that the input belongs to this class.  More formally, in a network with parameters $\theta$, we can view the output of node $k$ when presented with input $x^{(i)}$ as the probability $P(y_{\text{pred}}^{(i)} = k \mid x^{(i)};\theta)$. The softmax activation computes for each output $k$
+In a classification problem, the output layer usually consists of $K$ nodes, one for each class. Using a \textbf{softmax activation function} for the last layer, we can interpret the value at each node as the probability that the input belongs to this class.  More formally, in a network with parameters $\theta$, we can view the output of node $k$ when presented with input $x^{(i)}$ as the probability $P(y_{\text{pred}}^{(i)} = k \mid x^{(i)};\theta)$. The softmax activation computes for each output $k$
 \begin{equation}
 	\sigma(\mathbf{x})_k = \frac{e^{\mathbf{x}_k}}{\sum_{j=1}^{K}e^{\mathbf{x}_j}}
 \end{equation}
-where $\mathbf{x}$ is the vector consisting of all outputs from the previous layer. The output value of each neuron will range between 0 and 1 and the sum of all outputs will be 1, hence we can indeed interpret the output as a probability distribution.
+where $\mathbf{x}$ is the vector consisting of all outputs from the previous layer.
 
 \subsubsection{Loss function}
-Now, that we have defined what the network computes for each input, we need to measure how well our network approximates our training data. A loss function is therefore introduced. Since the aim of the network is to classify the central pixel(s) of the patch, we use the categorical cross-entropy loss function
+To train the network, we need to quantify how well it performs on the training data. A loss function is therefore introduced. Since the aim of the network is to classify the central pixel(s) of the patch, we use the \textbf{categorical cross-entropy loss} function
 \begin{equation}
 	\label{eq:loss}
 	\mathcal{L}(\theta) = 
@@ -335,22 +342,22 @@ Now, that we have defined what the network computes for each input, we need to m
 where $\mathbbm{1}$ is the indicator function and $P(y_{\text{pred}}^{(i)}=k \mid x^{(i)};\theta)$ is the probability computed by the neural network with weights $\theta$ that input vector $x^{(i)}$ with label $y^{(i)}$ belongs to class $k$.
 
 \subsubsection{Optimisation}
-We now aim to minimise this loss function. This is done by using the stochastic gradient descent algorithm. First, we need to compute the gradient $\frac{d\mathcal{L}(\theta)}{d\theta}$, so that we can apply gradient descent and update our weight vector to
+We now aim to minimise this loss function. The gradient descent algorithm is used, which repeatedly updates the weights of the network using the gradient of the loss function:
 \begin{equation}
-	\theta = \theta - \epsilon \frac{d\mathcal{L}(\theta)}{d\theta}
+	\theta_{i+1} = \theta_{i} - \epsilon \frac{d\mathcal{L}(\theta_{i})}{d\theta}
 \end{equation}
 where $\epsilon$ is the learning rate, a small positive value.
 
 Since every basic operation used in the neural network is differentiable, the entire network will also be differentiable, which in turn makes it possible to calculate the gradient of a differentiable loss function with respect to the weights in the network by repeatedly applying the chain rule. This process is called the backpropagation algorithm.
 
-The loss functions, as described in equation \ref{eq:loss} is computed using the entire training data set $\mathbb{X} = \{(x^{(1)},y^{(1)}), ...,(x^{(m)},y^{(m)})\}$. In the case of deep learning, where it is usual to have a very large training data set, this would be very memory costly and slow down the training phase unnecessarily. A solution to this problem is to use stochastic gradient descent instead, where the training data is split sequentially in batches. The loss and corresponding gradient updates are then computed individually for each batch.
+The loss functions, as described in equation \ref{eq:loss} is computed using the entire training data set $\mathbb{X} = \{(x^{(1)},y^{(1)}), ...,(x^{(m)},y^{(m)})\}$. In the case of deep learning, where it is usual to have a very large training data set, this would be very memory costly and slow down the training phase unnecessarily. A solution to this problem is to use \textbf{stochastic gradient descent} instead, where the training data is split in batches. The loss and gradient updates are then computed individually for each batch.
 
 \subsubsection{Momentum}
-An optimisation used to speed up the training process is momentum update. Minimising the loss function can be interpreted as moving a small particle down a hilly terrain in the hyper-dimensional space defined by the loss function. Since the gradient is related to the force experienced by that particle, this suggests that the gradient should only influence the velocity vector and not the position directly. This leads to the velocity update
+An optimisation used to speed up the training process is momentum update. Minimising the loss function can be interpreted as moving a small particle down a hilly terrain in the hyper-dimensional space defined by the loss function. Since the gradient is related to the force experienced by that particle, this suggests that the gradient should only influence the velocity vector and not the position directly: This leads to the velocity update
 \begin{equation}
 	v = \mu  v - \epsilon \frac{d\mathcal{L}(\theta)}{d\theta}
 \end{equation}
-where $\mu$ is the momentum, typically set to 0.9. We then update our weights by simply adding the velocity to the current value.
+where $\mu$ is the momentum. We then update our weights by simply adding the velocity to the current value.
 \begin{equation}
 	\theta = \theta + v
 \end{equation}
@@ -358,96 +365,66 @@ where $\mu$ is the momentum, typically set to 0.9. We then update our weights by
 Typically, a slightly different version called the Nesterov momentum, is used, as it has been shown to work better in practice \cite{nesterov_momentum}.
 
 \subsection{Convolutional neural networks}
-Convolutional neural networks make the explicit assumption that the inputs are images. This allows us to take advantage of some properties of images to make the function computed by the network more effective and greatly reduce the number of weights in our network. 
+Convolutional neural networks make the explicit assumption that the inputs are images. This allows us to take advantage of properties of images to make the function computed by the network more effective and greatly reduce the number of weights in our network. 
 
 A typical convolutional network constists of three types of layers:
 \begin{enumerate}
-	\item \textbf{Fully-connected layers}: These are identical to the layers in ordinary neural networks as introduced earlier.
-	\item \textbf{Convolutional layers}: A convolutional layer is three-dimensional, consisting of a width, height and depth. The parameters of a layer define a set of learnable filters, each spatially small along the width and height of the layer but with the depth equal to the depth of the input volume. Each filter in the layer is convolved with the input and computes the dot product at each point. The result of this operation is a two-dimensional activation map, which has translational invariance, as the filter is convolved with the entire input, and thus the same feature is detected independently of location. The computation done by such a filter in shown in Figure \ref{fig:conv_example}. Finally, the two-dimensional activation maps are stacked along the depth axis to produce the output volume.
+	\item \textbf{Fully-connected layers}: These are identical to the layers in  neural networks introduced earlier.
+	\item \textbf{Convolutional layers}: A convolutional layer is three-dimensional, consisting of a width, height and depth. The parameters of a layer define a set of learnable filters of small width and height, but with the depth equal to the depth of the input volume. Each filter in the layer is convolved with the input and computes the dot product at each point, resulting in a two-dimensional activation map. These are then stacked along the depth axis to produce the output volume.
 	
+	The computation done by a filter in shown in Figure \ref{fig:conv_example}. It has translational invariance as the filter is convolved with the entire input, thus detecting the same feature independently of location.  
 	\begin{figure}
 		\centering
-		\includegraphics[scale=0.6]{conv_example}
-		\caption[Example computation done by a $3 \times 3$ filter in a convolutional layer.]{Example computation done by a $3 \times 3$ filter in a convolutional layer. Both the stride and the padding are 1, so as to keep the output dimensions identical. The output at depth 0 for the marked element is $1 \cdot 1 + 2 \cdot 0 + 4 \cdot 1 + 3 \cdot 0 + 3 \cdot (-1) + 4 \cdot (-1) + 2 \cdot 1 + 3 \cdot (-1) + 4 \cdot 1 = 1$ and similarly at depth 1 the output for that element is -3.}
+		\includegraphics[scale=0.6]{conv_example2}
+		\caption[Example computation done by a $3 \times 3$ filter in a convolutional layer.]{Example computation done by a $3 \times 3$ filter in a convolutional layer. The stride and the padding are 1, so as to keep the output dimensions identical. The output is computed by convolving the filter with the input volume, computing the dot product at each point.}
 		\label{fig:conv_example}
 	\end{figure}
-
-	This connectivity pattern is inspired by the organization of the animal visual cortex. Individual neurons respond to stimuli in a small region of space known as the \textbf{receptive field}. Every value in an activation map can then be interpreted as the output of a neuron whose receptive field is the width and height of the filter, and who shares its weights with all its neighbours to the left and right spatially.
 
 	The size of the output volume is determined by the following hyperparameters:
 	\begin{enumerate}
 		\item The \textbf{depth} corresponds to the number of filters in the layer and is therefore equal to the depth of the output volume.
-		\item The \textbf{stride} determines by how many pixels the filter is moved during each step of the convolution. When the stride is greater than 1 the output will be smaller than the input.
-		\item The \textbf{padding} determines how many zeros are padded to the input width and height. This is particularly useful when we want to preserve the input dimensions.
+		\item The \textbf{stride} determines by how many pixels the filter is moved during each step of the convolution.
+		\item The \textbf{padding} determines how many zeros are padded to the input width and height.
 	\end{enumerate}
 	
-	\item \textbf{Pooling layers}: The function of the pooling layer is to reduce the spatial size of the input layer in order to reduce the number of parameters and computation in the network. The most common pooling layer implementation is the \textbf{max-pooling} layer, which just convolves a two-dimensional maximum operator of a given size, typically 2x2. The \textbf{stride} again determines the step size.
+	\item \textbf{Pooling layers}: Pooling layers reduce the spatial size of the input layer, which decreases the number of parameters in the network. The most common pooling layer implementation is the \textbf{max-pooling} layer, which just convolves a two-dimensional maximum operator of a given size. The \textbf{stride} determines the step size.
 
 \end{enumerate}
 
-A convolutional neural network typically consists of a sequence of these layers, starting with pairs of convolutional layers and max--pooling layers. The idea is that each one of these pairs of convolutional and pooling layers can learn more and more abstract features using the features learned by the previous layer. For example, the first pair might learn to recognise edges, the second layer shapes, etc. The last few layers of the network consist entirely of fully-connected layers. These learn how to classify the data using the features learned by the convolutional and max pooling layers.
+Typically, the first layers in a convolutional neural network consist of pairs of convolutional layers and max--pooling layers. The idea is that each  pair of layers can learn more and more abstract features using the features learned by the previous layers. For example, the first pair might learn to recognise edges, the second layer shapes, etc. The last few layers of the network consist entirely of fully-connected layers. These learn how to classify the data using the features learned by the convolutional and max pooling layers.
 
 \subsection{The overfitting problem}
-A common problem that arises with neural networks models is \textbf{overfitting}. This occurs when the model is not able to generalise on previously unseen data and instead just memorises the training data. Due to the large number of weights in deep convolutional neural networks, these are particularly prone to overfitting. Many techniques and heuristics have been developed in order to help prevent this; in my project I have used three of them: \textbf{L2 weight regularisation}, \textbf{Dropout} and \textbf{Batch Normalisation}, which I discuss below.
+A common problem that arises with neural networks is \textbf{overfitting}. This occurs when the model is not able to generalise on previously unseen data and instead just memorises the training data. Many techniques and heuristics have been developed in order to help prevent this; in my project I have used three of them: \textbf{L2 weight regularisation}, \textbf{Dropout} and \textbf{Batch Normalisation}, which I discuss below.
 
 \subsubsection{\textbf{L2} weight regularisation}
 The L2 regularisation prevents individual parameters to grow without bounds, instead making the network use all of its parameters, which has the effect of preventing the model from just memorising the data\footnote{\url{http://cs231n.github.io/neural-networks-2/\#reg}}. This is achieved by adding a regularisation penalty to the loss function, which is the sum of the squares of every parameter:
 \begin{equation}
 	R(\theta) = \sum_{k}^{} \sum_{l}^{} \theta_{k,l}^2
 \end{equation} 
-where $\theta$ is the weight matrix that includes all weights, including biases.
-The loss function that we aim to minimise thus becomes
+where $\theta$ is the matrix containing the weights of the network.
+The loss function that we aim to minimise becomes
 \begin{equation}
 	\mathcal{L}(\theta) = \mathcal{L}_{data}(\theta) + \lambda R(\theta) 
 \end{equation}
 where $\mathcal{L}_{data}(\theta)$ is the data loss, defined in Equation \ref{eq:loss} and $\lambda$ is a hyperparameter weighting the regularisation penalty. 
 
 \subsubsection{Dropout}
-A more recent technique, developed for deep neural networks is Dropout \cite{dropout}. When Dropout is used, the network randomly drops some neurons during the training phase. This forces the network to distribute the computation on all neurons evenly, which prevents the network from overfitting. The computation done by a single neuron thus becomes
-\begin{equation}
-\begin{split}
-	\textbf{r} & \sim \text{Bernoulli}_n(p) \\
-	y & = f_{act}((\sum_{i=1}^{n} r_i y_i w_i) + b)
-\end{split}
-\end{equation}
-where $\textbf{r}$ is a vector of $n$ independent Bernoulli random variables each with parameter $p$, that is $P(r_i = 1) = p$ and $P(r_i = 0) = 1 - p$ for each $r_i$. This is done at every layer and therefore amounts to sampling a sub-network from a larger network. 
+A more recent technique, developed for neural networks is Dropout \cite{dropout}. When Dropout is used, the network randomly drops some neurons during the training phase. This forces the network to distribute the computation on all neurons evenly, which prevents the network from overfitting. The algorithm is explained in more details in Appendix \ref{appendix:dropout}.
 
-At test time dropout is not applied. Thus, the network weights have to be scaled by a factor $p$ to compensate for the extra inputs at each layer. The back-propagation algorithm remains unchanged for the sub-network and can therefore be applied in the learning phase.
-
-In practice, it is common to apply Dropout only to the fully connected layers and not to the convolutional layers, as it has been shown to produce better results. As I will show later, this is also what was done by Pereira et al. \cite{pereira}.
-
-\subsubsection{Batch Normalisation}
-The final regularisation technique used is Batch Normalisation \cite{batch_normalization}. As this technique is more recent than the paper published by Pereira et al., it was not used in their method. However, in the second phase of my project I experiment with a different architecture in which I use Batch Normalisation to prevent overfitting.
-
-The important realisation is that the distribution of the inputs to each layer changes as the weights of the network are changed. This phenomenon is called \textit{internal covariance shift}. The training of the neural network is slowed down by this because each layer has to continuously adapt to this change in the distribution of its inputs. By fixing the distribution of these inputs, the network is able to learn faster and is less prone to overfitting. Similarly to how the inputs to the network are often normalised to have mean 0 and variance 1, it would be beneficial to ensure that the input vector $\textbf{x}$ to each layer has mean 0 and variance 1. 
-
-To make this efficient and differentiable, which is required for the minimisation of the loss function, each individual dimension of the input vector $\textbf{x}^{(k)}$ is normalised using the mean and standard deviation of the training mini-batch. In the same way as the mini-batch is used as an approximation to calculate the gradient of the loss function on the entire training set, the mini-batch is used to approximate the mean and variance of the entire training set at different layers in the network. However, just normalising each input of a layer might restrict which functions the layer is able to represent. The output is therefore linearly scaled by $\gamma$ and shifted by $\beta$, parameters that can be learned along with the weights. This ensures that the introduced transformation is able to represent the identity transformation, if that is the optimal thing to do. The Batch Normalisation transformation computes:
-\begin{equation}
-\begin{split}
-	\mu_{\mathbb{B}}  & = \frac{1}{m}\sum_{i=1}^m x^{(k)}_i \\	
-	\sigma^2_{\mathbb{B}}  & = \frac{1}{m}\sum_{i=1}^m (x^{(k)}_i - \mu_{\mathbb{B}})^2 \\	
-	\hat{x}^{(k)}_i & = \cfrac{x^{(k)}_i - \mu_{\mathbb{B}}}{\sqrt{\sigma^2_{\mathbb{B}} + \epsilon}} \\
-	\textrm{BN}_{\gamma, \beta}(x^{(k)}_i) & = \gamma \hat{x}^{(k)}_i + \beta
-\end{split}
-\end{equation}
-where $\mathbb{B}$ is a mini-batch of size $m$, $\mathbb{B} = \{ \textbf{x}_1, ... , \textbf{x}_m \}$ and $\epsilon$ is a numerical constant added to increase numerical stability.
-In convolutional neural networks, the Batch Normalisation transformation is applied just before the activation function. The output computed by each neuron therefore becomes
-\begin{equation}
-		y = f_{act}(\textrm{BN}_{\gamma, \beta}(\sum_{i=1}^{n} y_i w_i))
-\end{equation}
-where the Batch Normalisation transformation is applied to each dimension individually. Notice that since the parameter $\beta$ is added, the bias weight $b$ is made redundant. The testing phase has to be modified accordingly, the details of which can be found in \cite{batch_normalization}.
+\subsubsection{Batch normalisation}
+Batch normalisation \cite{batch_normalization} is an even more recent technique, which I use in the second phase of my project. The algorithm is applied on individual layers of the network, fixing the input distribution mean and variance for that layer. This allows the network to learn faster and makes it less prone to overfitting. The algorithm is explained in more details in Appendix \ref{appendix:batch_normalisation}.
 
 \section{Data source}
 \subsection{BraTS challenge}
 For my project, I use the dataset provided by BraTS2013\cite{menze:hal-00935640} challenge. It is split into three parts:
 \begin{enumerate}
-	\item The training dataset, which consists of 30 different patients and their ground truth marked by a human experts. The 30 patients are further divided into 20 high-grade glioma cases (HG) and 10 low-grade glioma cases (LG). The difference between these two types of brain tumours is their rate  of growth, which is slower for the low-grade case.
-	\item The challenge set, which consists of 10 high-grade patients without ground truth annotation. These scans are meant to be segmented by the participants of the challenge, who can then submit their segmentation online. 	
-	\item The leaderboard set contains 25 patients, including both high-grade and low-grade gliomas. The ground truth labelling for these scans is not publicly available.
+	\item The training dataset consists of 30 patients and their ground truth marked by human experts. The patients are further divided into 20 high-grade glioma cases (HG) and 10 low-grade glioma cases (LG). The difference between these two types of brain tumours is their rate  of growth, which is slower for the low-grade case.
+	\item The challenge dataset consists of 10 high-grade patients without ground truth annotation. Participants of the challenge can segment these scans and submit their segmentation online for evaluation. 	
+	\item The leaderboard dataset contains 25 patients, including both high-grade and low-grade gliomas. The ground truth labelling for these scans is not publicly available.
 \end{enumerate}
 The challenge and leaderboard sets are both used to rank the participants of the original BraTS conference. After the conference, to create a benchmarking resource, an online platform was made available that automatically calculates the scores (Dice score, PPV and Sensitivity) of submitted segmentations.
 
-Each patient consists of 4 images taken using different MRI contrasts: T2 and FLAIR MRI, which highlight differences in tissue water relaxational properties, and T1 MRI and T1c MRI, which show pathological intratumoural take-up of contrast agents. Each of these modalities shows different type of biological information and may therefore be useful for creating different features during the classification of the tissues. The highlight differences for the 4 modalities can be seen in Figure \ref{fig:mri_scans}, which shows the same axial plane slice for a patient for each modality. 
+Each patient consists of 4 images taken using different MRI contrasts: T2 and FLAIR MRI, which highlight differences in tissue water relaxational properties, and T1 MRI and T1c MRI, which show pathological intratumoural take-up of contrast agents. Each of these modalities shows different type of biological information and may therefore be useful for creating different features during the classification of the tissues. The highlight differences for the 4 modalities can be seen in Figure \ref{fig:mri_scans}. 
 
 \begin{figure}
 	\centering
@@ -483,7 +460,7 @@ The training dataset has been manually segmented by 4 different human experts in
 \subsection{High grade gliomas}
 For this project I have decided to focus only on the high-grade glioma cases. I made this choice for the following reasons:
 \begin{enumerate}
-	\item To keep the scope of the project within that of a Part II project. Pereira et al.\ propose a different model for the low-grade glioma case which I would have had to replicate as well, possibly doubling the amount of work needed during the training phase.
+	\item To keep the scope of the project within that of a Part II project. Pereira propose a different model for the low-grade glioma case which I would have had to replicate as well, possibly doubling the amount of work needed during the training phase.
 	\item Secondly, the results of most research papers in this area are commonly reported in terms of high-grade glioma cases, as it is considered to be harder than the low-grade cases. 
 	\item Lastly, the challenge dataset, which consists only of high-grade patients, allows me to easily compare the results of my models with those of other researchers. 
 \end{enumerate}
@@ -499,8 +476,8 @@ As explained in the previous chapter the data consists of 20 different patients,
 
 \begin{table}[h]
 \centering	
-\begin{tabular}{ c c } 
-\textbf{Size} & \textbf{Number of scans}\\
+\begin{tabular}{ m{3.5cm} c } 
+\textbf{Size ($z \times y \times z$)} & \textbf{Number of scans}\\
  \hline
  $\ 176 \times 216 \times 160$ & 8 \\ 
  $\ 176 \times 216 \times 176$ & 6 \\ 
@@ -510,11 +487,11 @@ As explained in the previous chapter the data consists of 20 different patients,
  $\ 240 \times 240 \times 168$ & 1 \\ 
  $\ 220 \times 220 \times 168$ & 1 \\ 
 \end{tabular}
-\caption{Scan sizes in voxels for the 20 different patients, dimensions are ordered as $(z \times y \times z)$}
+\caption[Scan sizes for the 20 different patients of the training dataset.]{Scan sizes for the 20 different high-grade glioma patients of the BraTS training dataset.}
 \label{table:scan_sizes}
 \end{table}
 
-The model proposed by Pereira et al. \cite{pereira} uses the Nyul normalisation \cite{nyul}. This normalisation requires human input, preferably from a domain expert. In order to make the process fully automatic, I use another method, also reported in Pereira's paper, that I describe next.
+The model proposed by Pereira\cite{pereira} uses the Nyul normalisation \cite{nyul}. This normalisation requires human input, preferably from a domain expert. In order to make the process fully automatic, I use another method, also reported in Pereira's paper, that I describe next.
 
 \subsection{Scan normalisation}
 \label{section:scan_normalisations}
@@ -574,7 +551,7 @@ Each input to the convolutional neural network is a three-dimensional array, of 
 \begin{figure}
 	\centering
 	\includegraphics[width=\textwidth]{patch_extraction}
-	\caption[Patch extraction process for a three dimensional array.]{Patch extraction process for a three dimensional array. The actual image array is four dimensional, the 4th dimension being the different modalities. Here $\textsf{width}=\textsf{height}=33$ and therefore corresponds to the patch size proposed by pereira et al.}
+	\caption[Patch extraction process for a three dimensional array.]{Patch extraction process for a three dimensional array. The actual image array is four dimensional, the 4th dimension being the different modalities. Here $\textsf{width}=\textsf{height}=33$ and therefore corresponds to the patch size proposed by Pereira}
 	\label{fig:patch_extraction}
 \end{figure}
 
@@ -593,7 +570,7 @@ There are two issues that need to be resolved before extracting the patches:
 			4 & Enhancing tumour		& 560777 	& 0.34 \% \\
 			
 			\end{tabular}
-			\caption{Class frequencies in the BraTS2013 HG dataset. The normal tissue (class 0) is highly overrepresented, which leads to issues when training the convolutional neural network. We therefore have to balance the dataset when extracting the patches.}
+			\caption[Class frequencies for the 20 high-grade glioma patients of the BraTS2013 dataset.]{Class frequencies for the 20 high-grade glioma patients of the BraTS2013 dataset. Healthy tissue voxels (class 0) are highly overrepresented, which leads to issues when training the convolutional neural network. Therefore, patches have to be balanced during the patch extraction phase.}
 			\label{table:class_frequencies}
 		\end{table}
 	\item It is not possible to extract an entire patch around the voxels too close to the edge of the scan. To solve this issue there are two options: I could either ignore the patch entirely or pad the scan such that each labelled voxel is surrounded by enough voxels. Only the first option is considered as it helps with the balanced classes issue, as most of the voxels close to an edge are from class 0. Furthermore, as the brains are centred within the MRI scans, voxels close to an edge are surrounded only by voxels of value 0, making the patch identical to many other patches close to an edge. Table \ref{table:valid_class_frequencies} shows the distribution of classes for ``valid'' voxels, that is, those at least more than half the patch length away from the x or y edges for Pereira's model with $\textsf{width}=\textsf{height}=33$. Indeed, most ignored voxels come from class 0.
@@ -609,7 +586,7 @@ There are two issues that need to be resolved before extracting the patches:
 		3 & Non-enhancing tumour 	& 183396 	& 0.19 \% & 1040\\ 
 		4 & Enhancing tumour		& 558320 	& 0.57 \% & 2457\\
 		\end{tabular}
-		\caption{Class frequencies in the BraTS2013 HG dataset for valid voxels only, that is, those voxels it is possible to extract a patch of size $33 \times 33$ around. As most of the ignored voxels are in class 0, we can safely ignore them.}
+		\caption[Class frequencies for valid voxels in the 20 high-grade glioma patients of the BraTS2013 dataset.]{Class frequencies for valid voxels in the 20 high-grade glioma patients of the BraTS2013 dataset. A voxel is said to be valid if it is possible to extract a patch of size $33 \times 33$ around it. As most of the invalid voxels are in class 0, we can safely ignore invalid voxels.}
 		\label{table:valid_class_frequencies}
 		\end{table}
 \end{enumerate}
@@ -649,30 +626,29 @@ To make the resampling of the patches at each epoch more efficient, I first crea
 At the beginning of each training epoch, I then randomly choose the same number of positions for each class from \texttt{valid\_positions} using numpy's \texttt{random.choice} function. For each position, I extract the corresponding patch and label which are returned as training data.
 
 \subsection{Data augmentation}
-To increase the amount of data available, data augmentation techniques can be used. In typical applications of convolutional neural networks for image processing and computer vision tasks, translations and rotations are used. In my case, the data consists entirely of two-dimensional patches, thus translation cannot be used as it would result in a different patch, with a possibly different label. However, using rotations of the patches might give some performance improvements. Pereira et al. propose the following variants in \cite{pereira}:
+To increase the amount of data available, data augmentation techniques can be used. In typical applications of convolutional neural networks for image processing and computer vision tasks, translations and rotations are used. In my case, the data consists entirely of two-dimensional patches, thus translation cannot be used as it would result in a different patch, with a possibly different label. However, using rotations of the patches might give some performance improvements. Pereira proposes the following variants in \cite{pereira}:
 \begin{enumerate}
 	\item No rotations
 	\item Rotations of 90, 180 and 270 degrees.
 	\item Uniformly sample three rotations from an array of equally spaced angles. The angle step proposed is $\frac{1}{16} \times 90^{\circ} = 6^{\circ}$
 \end{enumerate}
-Pereira et al. reported that using rotations of multiples of 90 degrees performed the best, which is why I decided to implement it. I perform the rotations with a custom Keras `data generator'. Such a data generator receives as an input a batch of data and returns another batch of data. Here, the generator randomly rotates each training patch in the batch using the numpy \texttt{rot90} function, which rotates arrays by steps of 90 degrees.
+Pereira reported that using rotations of multiples of 90 degrees performed the best, which is why I decided to implement it. I perform the rotations with a custom Keras `data generator'. Such a data generator receives as an input a batch of data and returns another batch of data. Here, the generator randomly rotates each training patch in the batch using the numpy \texttt{rot90} function, which rotates arrays by steps of 90 degrees.
 
-\subsection{Training: Pereira model}
+\subsection{Training: Pereira's model}
 
 \subsubsection{Architecture}
 
-The model proposed by Pereira et al. \cite{pereira} consists of 11 layers, shown in figure \ref{fig:pereira_model}. The first three layers are convolutional layers with filter size $3 \times 3$, stride $1 \times 1$ and width 64. Using three layers of size $3 \times 3$ consecutively effectively has a receptive field of size $7 \times 7$, but has fewer parameters then a single $7 \times 7$ convolutional layer would have, reducing the overall number of parameters and therefore making the network less prone to overfitting \cite{very_deep_conv_nets}. The next layer is a max pooling layer of size $3 \times 3$ and stride $2 \times 2$. This is an unusual design choice for convolutional networks as the size is typically smaller than the stride. Pereira et al. motivate this choice by arguing that although pooling can be positive to eliminate unwanted details and achieve invariance, it can also eliminate some of the important details. By keeping the size of the layer larger than the stride, the pooling will overlap which will allow the network to keep more information about location. Next, three more consecutive convolutional layers are applied, this time doubling the width to 128 filters. Again, a max pooling layer with the same hyper-parameters as the previous one is applied, before adding three fully-connected layers of size 256, 256 and 5 respectively. Table \ref{table:pereira_weights} shows the model architecture in more details including the number of weights in each layer. 
+The model proposed by Pereira \cite{pereira} consists of 11 layers, shown in figure \ref{fig:pereira_model}. The first three layers are convolutional layers with filter size $3 \times 3$, stride $1 \times 1$ and width 64. Using three layers of size $3 \times 3$ consecutively effectively has a receptive field of size $7 \times 7$, but has fewer parameters then a single $7 \times 7$ convolutional layer would have, reducing the overall number of parameters and therefore making the network less prone to overfitting \cite{very_deep_conv_nets}. The next layer is a max pooling layer of size $3 \times 3$ and stride $2 \times 2$. This is an unusual design choice for convolutional networks as the size is typically smaller than the stride. Pereira motivates this choice by arguing that although pooling can be positive to eliminate unwanted details and achieve invariance, it can also eliminate some of the important details. By keeping the size of the layer larger than the stride, the pooling will overlap which will allow the network to keep more information about location. Next, three more consecutive convolutional layers are applied, this time doubling the width to 128 filters. Again, a max pooling layer with the same hyper-parameters as the previous one is applied, before adding three fully-connected layers of size 256, 256 and 5 respectively. Table \ref{table:pereira_weights} shows the model architecture in more details including the number of weights in each layer. 
 
 \begin{figure}
 	\centering
 	\includegraphics[width=\textwidth]{pereira_model}
-	\caption{Convolutional network architecture proposed by Pereira et al.}
+	\caption{Convolutional network architecture proposed by Pereira.}
 	\label{fig:pereira_model}
 \end{figure}
 
 \begin{table}
 \centering	
-\label{table:pereira_weights}
 \begin{tabular}{ c c S[table-format=7.0] } 
 \textbf{Layer type} & \textbf{Output shape} & \textbf{\# Parameters} \\
  \hline
@@ -691,7 +667,8 @@ FC			& $\quad 5 	\times\ 1 	\times\ 1$ 	& 1285\\
 \rule{0pt}{3ex}    
 && 2118213\\
 \end{tabular}
-\caption[Summary of the architecture proposed by Pereira, including the number of parameters in each layer.]{Summary of the architecture proposed by Pereira, including the number of parameters in each layer. The network has a total of 2,118,213 trainable parameters.}
+\caption[Summary of the architecture proposed by Pereira.]{Summary of the architecture proposed by Pereira, including the number of parameters in each layer. The network has a total of 2,118,213 trainable parameters.}
+\label{table:pereira_weights}
 \end{table}
 
 
@@ -702,7 +679,7 @@ The activation function used throughout the network is the leaky rectifier, with
 Of the three techniques presented for avoiding overfitting in the preparation chapter, Pereira uses Dropout \cite{dropout} in the fully-connected layers, with probability $p=0.1$ of removing a node from the network.
 
 \subsubsection{Implementation of the architecture in Keras}
-The network proposed by Pereira et al. is sequential, that is the layers are stacked linearly. Using the Keras \texttt{Sequential} model is therefore the simplest way to implement it. The \texttt{Sequential} model makes it possible to create networks by adding layers to it sequentially. The three types of layers used in the network have available Keras implementations, and therefore building the network itself was relatively straightforward. First, an instance of a sequential model is instantiated:
+The network proposed by Pereira is sequential, that is the layers are stacked linearly. Using the Keras \texttt{Sequential} model is therefore the simplest way to implement it. The \texttt{Sequential} model makes it possible to create networks by adding layers to it sequentially. The three types of layers used in the network have available Keras implementations, and therefore building the network itself was relatively straightforward. First, an instance of a sequential model is instantiated:
 \begin{lstlisting}[language=Python]
 	model = Sequential()
 \end{lstlisting}
@@ -730,6 +707,8 @@ Finally, before training the model, we need to specify which loss function and w
 	sgd = SGD(lr=3e-5, decay=0.0, momentum=0.9, nesterov=True)
 	model.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy']
 \end{lstlisting}
+
+The complete implementation of the model is shown in Appendix \ref{appendix:pereira_model}. 
 
 \subsubsection{Training}
 Pereira's paper specifies that the model was trained over 20 epochs, each training the network on 450,000 patches, that is 90,000 patches per class. The optimisation algorithm used is a standard stochastic gradient descent algorithm with Nesterov momentum, with constant momentum $\mu = 0.9$. The learning rate is linearly decreased from $3 \times 10^{-5}$ to $3 \times 10^{-7}$. Keras does not include an implementation for linear learning rate decay, thus I use algoritm \ref{alg:linear_decay} to manually specify the learning rate at each epoch.
@@ -767,7 +746,7 @@ In Figure \ref{fig:pereira_validation_loss}, the validation loss and validation 
 	\setlength\figureheight{10cm}
 	\setlength\figurewidth{0.8\textwidth}
 	\input{plots/pereira_validation_accuracy}
-	\caption[Validation loss and accuracy during training for the model proposed by Pereira et al.]{Validation loss and accuracy during training for the model proposed by Pereira et al. Both seem to converge over this period.}
+	\caption[Validation loss and accuracy during training for the model proposed by Pereira.]{Validation loss and accuracy during training for the model proposed by Pereira. Both seem to converge over this period.}
 	\label{fig:pereira_validation_loss}
 \end{figure}
 
@@ -781,7 +760,7 @@ The design of the architecture for my model is based on the following points:
 		\begin{figure}
 			\centering
 			\includegraphics[width=0.4\textwidth]{bigger_patches}
-			\caption[Example patch for my model compared to a patch for the model proposed by Pereira et al.]{Example patch for my model compared to a patch for the model proposed by Pereira et al. \cite{pereira}. The patch for the Pereira model is drawn in red. The central blue square is the region classified by my model, of size $8 \times 8$.}
+			\caption[Example patch for my model compared to a patch for the model proposed by Pereira.]{Example patch for my model compared to a patch for the model proposed by Pereira. \cite{pereira}. The patch for the Pereira model is drawn in red. The central blue square is the region classified by my model, of size $8 \times 8$.}
 			\label{fig:bigger_patches}
 		\end{figure}
 	\item To speed up the segmentation and to prevent an explosion of the number of weights, instead of only classifying the central voxel, the network classifies the central $8 \times 8$ voxels of a patch. The output of the network is therefore no longer a $5 \times 1$ array of the probabilities for each class. Instead, the output is now a $5 \times 64$ array that outputs the class probabilities for each voxel in the central $8 \times 8$ `subpatch' of the input. 
@@ -820,12 +799,12 @@ Max-Pool 	& $256 		\times\ 8 	\times\ 8$	& 0\\
 \rule{0pt}{3ex}    
 && 2485253\\
 \end{tabular}
-\caption[Summary of my convolutional neural network architecture, including the number of parameters in each layer.]{Summary of my convolutional neural network architecture, including the number of parameters in each layer.}
+\caption[Summary of my fully-convolutional neural network architecture.]{Summary of my fully-convolutional neural network architecture, including the number of parameters in each layer. The network has a total of 2,485,253 trainable parameters. Although increasing the size of the input patch by a factor of 4, there are only 17\% more parameters than in the model proposed by Pereira.}
 \label{table:my_model}
 \end{table}
 
 \subsubsection{Implementation}
-The implementation of my model is similar to my implementation of the model proposed by Pereira et al, which is the main advantage of using a library such as Keras. However, there is a subtlety that arises from the fact that the network is fully-convolutional. The output of the last layer is a three-dimensional array of size $5 \times 8 \times 8$ but the softmax activation can only take as an argument two-dimensional arrays. Therefore, I have to reshape the array into a $64 \times 5$ array before applying the softmax activation. Keras makes this operation easy with the \texttt{Reshape} and \texttt{Permute} layers:
+The implementation of my model is similar to my implementation of the model proposed by Pereira, which is the main advantage of using a library such as Keras. However, there is a subtlety that arises from the fact that the network is fully-convolutional. The output of the last layer is a three-dimensional array of size $5 \times 8 \times 8$ but the softmax activation can only take as an argument two-dimensional arrays. Therefore, I have to reshape the array into a $64 \times 5$ array before applying the softmax activation. Keras makes this operation easy with the \texttt{Reshape} and \texttt{Permute} layers:
 \begin{lstlisting}[language=Python]
 	model.add(Reshape((5, 64)))
 	model.add(Permute((2,1)))
@@ -838,6 +817,8 @@ Similarly, using Batch Normalisation is easy in Keras, as it has a \texttt{Batch
 	model.add(BatchNormalization(axis=axis, trainable=trainable))
 	model.add(LeakyReLU(alpha))
 \end{lstlisting}
+
+The full implementation is listed in Appendix \ref{appendix:my_model}.
 
 \subsubsection{Training}
 I train my model over 40 epochs using 100,000 patches per epoch. To minimise the loss function I use the Adaptive Moment Estimation method (adam) \cite{adam} which is a stochastic gradient descent method that computes adaptive learning rates for each parameter. This method is implemented in Keras and can therefore be specified when compiling the model as follows:
@@ -854,7 +835,7 @@ The first stage, normalising the scans, is identical to the first stage for trai
 The patch extraction and segmentation phases are however dependent on the model, as the patches have to be extracted such that every voxel in the input scan can be classified by the model. The implementation of these stages is more complicated for my model, and therefore I describe the implementation for the two models independently in the next two subsections.
 
 \subsubsection{Patch extraction and segmentation for Pereira's model}
-For the model proposed by Pereira et al. \cite{pereira}, the convolutional neural network can be modelled as a function classifying the central voxel of a patch of size $33 \times 33 \times 4$. In this case, the segmentation of a patient is equivalent to convolving the function computed by the convolutional neural network on two-dimensional axial slices of the 4 input image modalities. The images must however be zero-padded around the x and y edges so as to keep the dimensions of the segmentation the same as the dimensions of the input images. Hence the steps are:
+For the model proposed by Pereira, the convolutional neural network can be modelled as a function classifying the central voxel of a patch of size $33 \times 33 \times 4$. In this case, the segmentation of a patient is equivalent to convolving the function computed by the convolutional neural network on two-dimensional axial slices of the 4 input image modalities. The images must however be zero-padded around the x and y edges so as to keep the dimensions of the segmentation the same as the dimensions of the input images. Hence the steps are:
 \begin{enumerate}
 	\item Read in the 4 scan images as a single 4-dimensional array of size $z \times y \times x \times 4$.
 	\item Normalise the image as explained in Section \ref{section:scan_normalisations}. Thus, the image is first winsorised, then the N4ITK correction is applied to it, and finally for each modality the mean and variance are normalised.
@@ -879,7 +860,7 @@ Figure \ref{fig:example_pereira_segmentation} shows the resulting segmentation f
 	\includegraphics[scale = 0.1]{challenge_1_segmentation_76}
 	\includegraphics[scale = 0.1]{challenge_1_segmentation_with_T2_76}
 	
-	\caption[Example segmentation computed using the model proposed by Pereira et al.]{Left column: The segmentation for patient 1 in the challenge dataset for axial plane slices for $z \in \{66, 71, 76\}$. Right column: The same segementation slices overlaid on the T2 scan.}
+	\caption[Example segmentation computed using the model proposed by Pereira.]{Example segmentation computed using the model proposed by Pereira. Left column: The segmentation for patient 1 in the challenge dataset for axial plane slices for $z \in \{66, 71, 76\}$. Right column: The same segementation slices overlaid on the T2 scan.}
 	\label{fig:example_pereira_segmentation}
 \end{figure}
 
@@ -904,7 +885,7 @@ As my model classifies the central $8 \times 8$ voxels for each input patch, the
 
 
 \subsection{Segmentation post-processing}
-After the new patient has been segmented, a further simple heuristic is used to remove small volumes of data labelled as diseased tissue, based on the assumption that the diseased tissue is connected into a single component of relatively large size. Pereira et al.\ \cite{pereira} proposed to remove all connected components (continuous regions of diseased tissue) of less than 10,000 voxels in volumes.
+After the new patient has been segmented, a further simple heuristic is used to remove small volumes of data labelled as diseased tissue, based on the assumption that the diseased tissue is connected into a single component of relatively large size. Pereira \cite{pereira} proposed to remove all connected components (continuous regions of diseased tissue) of less than 10,000 voxels in volumes.
 
 I implement this heuristic using a depth first search on the graph represented by a scan, where each voxel is a vertex and shares an edge with its 6 immediate neighbours (or less if it is on an edge). First, I create a second 3-dimensional array of the same size as the scan. This array marks each node as unseen, visited or processed. As only the diseased tissue is considered, i.e.\ classes 1--4, I mark all voxels of class 0 as already processed. Then the algorithm iterates the following steps until all voxels have been processed:
 \begin{enumerate}
@@ -961,8 +942,8 @@ Figure \ref{fig:unit_test_output} shows the output of running the unit tests. Al
 \begin{figure}[h]
 	\centering
 	\includegraphics[width = \textwidth]{unit_test_output}
-	\label{fig:unit_test_output}
 	\caption{Output of running the unit tests. All tests pass successfully.}
+	\label{fig:unit_test_output}
 \end{figure}
 
 \section{BraTS evaluation}
@@ -972,8 +953,8 @@ The BraTS2013 challenge \cite{brats-proceedings} evaluates the segmentation usin
 \begin{figure}
 	\centering
 	\includegraphics[scale = 0.5]{evaluation_venn_diagram}
-	\label{fig:evaluation_venn_diagram}
 	\caption{Venn diagram of the classification space.}
+	\label{fig:evaluation_venn_diagram}
 \end{figure}
 
 \subsubsection{Positive predictive value}
@@ -1015,8 +996,8 @@ Figure \ref{fig:evaluation_example} shows an example for a segmented slice in th
 \begin{figure}[h]
 	\centering
 	\includegraphics[scale = 0.5]{example_evaluation}
+	\caption[Example showing the segmentation space for a slice in the axial plane.]{Example showing the segmentation space for a slice in the axial plane. This image was reproduced from \cite{brats-proceedings}.}	
 	\label{fig:evaluation_example}
-	\caption[Example showing the segmentation space for a slice in the axial plane.]{Example showing the segmentation space for a slice in the axial plane. This image was reproduced from \cite{brats-proceedings}.}
 \end{figure}
 
 \subsection{Regions of evaluation}
@@ -1031,7 +1012,7 @@ As stated above, the metrics are defined only for binary classification into pos
 \section{Evaluation of the model proposed by Pereira}
 \subsection{BraTS evaluation}
 \subsubsection{Dice score}
-Table \ref{table:pereira_dice_results} shows the Dice scores I obtained for each of the 10 challenge scans using my implementation of the method proposed by Pereira et al.\ \cite{pereira}. In figure \ref{pereira_box_plot} the mean and standard deviation are plotted for the three regions, along with the dice score reported by Pereira in his paper. 
+Table \ref{table:pereira_dice_results} shows the Dice scores I obtained for each of the 10 challenge scans using my implementation of the method proposed by Pereira \cite{pereira}. In figure \ref{pereira_box_plot} the mean and standard deviation are plotted for the three regions, along with the dice score reported by Pereira in his paper. 
 \begin{table}
 \centering	
 \begin{tabular}{ c | c c c} 
@@ -1052,7 +1033,7 @@ Table \ref{table:pereira_dice_results} shows the Dice scores I obtained for each
 \rule{0pt}{3ex}    
 \textbf{mean} & $0.805 \pm 0.047$ & $0.656 \pm 0.267$ & $0.508 \pm 0.262$
 \end{tabular}
-\caption{Dice scores obtained for the 10 challenge patients using my implementation of the method proposed by Pereira et al. These results were produced by the online evaluation platform as the ground truth labelling is not publicly available.}
+\caption[Dice scores obtained for the 10 challenge patients using my implementation of the method proposed by Pereira.]{Dice scores obtained for the 10 challenge patients using my implementation of the method proposed by Pereira. These results were produced by the online evaluation platform as the ground truth labelling is not publicly available.}
 \label{table:pereira_dice_results}
 \end{table}
 
@@ -1062,13 +1043,13 @@ Table \ref{table:pereira_dice_results} shows the Dice scores I obtained for each
 %	\setlength\figurewidth{0.8\textwidth}
 %	\input{plots/pereira_box_plot}
 	\includegraphics[width=0.8\textwidth]{plots/pereira_box_plot2}
-	\caption{Box plot showing the dice scores obtained by my implementation of the model proposed by Pereira et al.}
+	\caption{Box plot showing the dice scores obtained by my implementation of the model proposed by Pereira.}
 	\label{pereira_box_plot}
 \end{figure}
 
 The mean scores for the `Core' and `Enhancing' region are significantly lower than the mean score for the `Complete' region, and have a much higher standard deviation. This can partially be explained by the outlier values obtained from patient 7. For this patient, the diseased tissue has been segmented correctly, but the model was not able to distinguish the different classes within the diseased tissue, and it classified almost everything as either normal tissue (class 0) or edema (class 2). Because class 2 is not defined as positive in the `Core' and `Enhancing' regions, the scores for those regions are very close to 0.  
 
-However, even if the results from patient 7 were ignored, the average results for regions 2 and 3 are still below those reported by Pereira et al.\ \cite{pereira} of (0.8, 0.78, 0.73). As I exactly followed the method described in the paper published by Pereira et al., I emailed the author asking for a possible explanation for this difference. He answered that (at the time) there were two differences between his and my method, which he did not report in his paper. The first difference was the parameters used in the N4 correction, which he did not include in his paper. However, changing the parameters I use to those used in his proposed model did not have an impact on the results. The second difference was how the patches are selected. The author of the paper wrote in his email that he used a heuristic to avoid selecting patches that were too close to each other (less than 3 voxels apart) and made sure to include patches of normal tissue close to the tumour. I also implemented these heuristics as described in Section \ref{section:patch_extraction}, which improved the results slightly but not to a level similar to those reported by the author. This discrepancy is hard to explain, but it is likely due to the fact that the heuristics I implemented are only approximations to those used (but not reported) by Pereira.
+However, even if the results from patient 7 were ignored, the average results for regions 2 and 3 are still below those reported by Pereira \cite{pereira} of (0.8, 0.78, 0.73). As I exactly followed the method described in the paper published by Pereira, I emailed the author asking for a possible explanation for this difference. He answered that (at the time) there were two differences between his and my method, which he did not report in his paper. The first difference was the parameters used in the N4 correction, which he did not include in his paper. However, changing the parameters I use to those used in his proposed model did not have an impact on the results. The second difference was how the patches are selected. The author of the paper wrote in his email that he used a heuristic to avoid selecting patches that were too close to each other (less than 3 voxels apart) and made sure to include patches of normal tissue close to the tumour. I also implemented these heuristics as described in Section \ref{section:patch_extraction}, which improved the results slightly but not to a level similar to those reported by the author. This discrepancy is hard to explain, but it is likely due to the fact that the heuristics I implemented are only approximations to those used (but not reported) by Pereira.
 
 \subsubsection{Sensitivity and positive predictive value}
 The means and standard deviations for the sensitivity and positive predictive value for my implementation of the model proposed by Pereira are reported in Table \ref{table:pereira_sensitivity_average}. My implementation obtained higher values for the positive predictive value but lower scores for the sensitivity. This can be explained by the trade-off that exists between these two metrics, mentioned previously.
@@ -1087,7 +1068,7 @@ The means and standard deviations for the sensitivity and positive predictive va
 & Reported by Pereira & 0.75 & 0.86 & 0.71 \\
 \end{tabular}
 }
-\caption{Sensitivity and positive predictive value for the three regions obtained on the challenge dataset using my implementation of the method proposed by Pereira et al. The results reported by Pereira are also shown for comparison. My implementation achieves higher values for the positive predictive value but lower values for the sensitivity.}
+\caption[Sensitivity and positive predictive value for the three regions obtained on the challenge dataset using my implementation of the method proposed by Pereira.]{Sensitivity and positive predictive value for the three regions obtained on the challenge dataset using my implementation of the method proposed by Pereira. The results reported by Pereira are also shown for comparison. My implementation achieves higher values for the positive predictive value but lower values for the sensitivity.}
 \label{table:pereira_sensitivity_average}
 \end{table}
 
@@ -1096,24 +1077,11 @@ Finally, I also submitted my segmentations to the online evaluation platform whi
 
 \begin{figure}
 	\centering
-	\label{fig:online_eval_rank}
 	\includegraphics[width=\textwidth]{ranking_table_header}
 	\includegraphics[width=\textwidth]{pereira_model_ranked_results}
 	\caption[Online evaluation ranking.]{Online evaluation ranking. My submission was ranked 42\textsuperscript{nd} out of 55 contestants (at the time of writing).}
+	\label{fig:online_eval_rank}
 \end{figure}
-
-%\subsection{Effect of training duration}
-%Pereira et al. trained this model for 20 epochs on about 450,000 patches per epoch. In figure \ref{fig:pereira_validation_loss}, I plotted the validation loss and the validation accuracy obtained on 500 patches for each class. Since the validation data is balanced, it does make sense to examine the accuracy as well as the other metrics. However, an increase in validation accuracy does not necessarily mean that the Dice score will improves as well. To investigate how the Dice score changes as the model is  trained, I saved the model after each epoch, meaning that I can segment the challenge scans after each epoch to investigate how the dice score changes. I plot the results in Figure \ref{fig:dice_training}. SAY SOMETHING ABOUT WHAT IS TO SEE IN THAT PLOT. TODO
-%
-%\begin{figure}
-%	\centering
-%	\label{fig:dice_training}
-%	\setlength\figureheight{10cm}
-%	\setlength\figurewidth{0.8\textwidth}
-%	\input{plots/dice_training}
-%	\caption{Plot of the mean dice scores for the three regions as the model is trained.}
-%\end{figure}
-
 
 \subsection{Confusion matrix}
 To get more insights into how the model behaves, I decided to segment 11 scans from the 2015 dataset and compute the confusion matrix. The dice scores obtained for these 11 scans are 0.681, 0.643 and 0.673 for the `Complete', `Core' and `Enhancing' regions respectively. The ground truth for these scans is put together slightly differently than for the 2013 dataset, which explains why the dice scores is lower for the `Complete' region. However, the scans are still similar enough for these scores and the confusion matrix to be relevant. The confusion matrix is shown in table \ref{table:confusion_pereira}. As expected from the dice scores, the model is doing well for classes 0 and 4, predicting over 64\% of the voxels in class 4 correctly. For classes 1, 2 and 3 the model is doing rather poorly, reaching no more than 38\% of correctly classified voxels and predicting a majority of voxels as being from class 0. The especially low result for class 3, with only about 11\% of correctly classified voxels can be explained by the fact that there is less training data available for this class. Furthermore, because the boundaries between classes 2, 3 and 4 are somewhat subjective, there are different possible interpretations of the tissues.
@@ -1131,7 +1099,7 @@ To get more insights into how the model behaves, I decided to segment 11 scans f
 & \multicolumn{1}{c|}{3} & \textbf{51.163} & 8.576 & 23.191 & 10.702 & 6.367 \\
 & \multicolumn{1}{c|}{4} & 25.067 & 0.891 & 3.926 & 6.107 & \textbf{64.0078} \\
 \end{tabular}
-\caption{Confusion matrix for the model proposed by Pereira for 11 scans taken from the BraTS 2015 dataset. The percentage of correctly predicted voxels for each class is shown.}
+\caption[Confusion matrix obtained with my implementation of the model proposed by Pereira on 11 scans taken from the BraTS 2015 dataset.]{Confusion matrix obtained with my implementation of the model proposed by Pereira on 11 scans taken from the BraTS 2015 dataset. The percentage of correctly predicted voxels for each class is shown.}
 \label{table:confusion_pereira}
 \end{table}
 
@@ -1152,7 +1120,7 @@ In table \ref{table:variants_dice_results} the results obtained using these vari
 Adam + ReLU & $0.796 \pm 0.054$ & $0.630 \pm 0.279$ & $0.486 \pm 0.265$ \\
 Adam optimiser & $0.815 \pm 0.069$ & $0.670 \pm 0.233$ & $0.592 \pm 0.217$ \\
 \end{tabular}
-\caption{Dice scores obtained using variants of the model proposed by Pereira et al.}
+\caption{Dice scores obtained using variants of the model proposed by Pereira.}
 \label{table:variants_dice_results}
 \end{table}
 
@@ -1192,7 +1160,7 @@ Complete &	$0.661 \pm 0.209$ & $0.933 \pm 0.042$ \\
 Core & 		$0.453 \pm 0.318$ & $0.945 \pm 0.038$ \\
 Enhancing & $0.467 \pm 0.297$ & $0.840 \pm 0.101$ \\
 \end{tabular}
-\caption{Sensitivity and positive predictive value for the three regions obtained on challenge dataset using my model.}
+\caption{Sensitivity and positive predictive value obtained on the challenge dataset using my model.}
 \label{table:my_model_sensitivity_ppv}
 \end{table}
 
@@ -1204,7 +1172,7 @@ Enhancing & $0.467 \pm 0.297$ & $0.840 \pm 0.101$ \\
 \end{figure}
 
 \subsection{Confusion matrix}
-The confusion matrix obtained for my model using the same 11 patients of the BraTS2015 dataset is shown in Table \ref{table:confusion_my_model}. Interstingly, although my model performs worse on the 2013 challenge dataset than the model proposed by Pereira et al., it performs much better on this subset of the 2015 training dataset, obtaining average dice scores of (0.806,0.776,0.819). The lower value for class 3 can again be explained by the fact that there is less training data available for this class. However, compared to my implementation of Pereira's model the value has more than tripled from 11\% to 38\% of voxels from class 3 being correctly classified.
+The confusion matrix obtained for my model using the same 11 patients of the BraTS2015 dataset is shown in Table \ref{table:confusion_my_model}. Interstingly, although my model performs worse on the 2013 challenge dataset than the model proposed by Pereira, it performs much better on this subset of the 2015 training dataset, obtaining average dice scores of (0.806,0.776,0.819). The lower value for class 3 can again be explained by the fact that there is less training data available for this class. However, compared to my implementation of Pereira's model the value has more than tripled from 11\% to 38\% of voxels from class 3 being correctly classified.
 
 \begin{table}
 \centering	
@@ -1219,13 +1187,13 @@ The confusion matrix obtained for my model using the same 11 patients of the Bra
 & \multicolumn{1}{c|}{3} & 5.87 & 10.49 & 30.81 & \textbf{37.98} & 14.84 \\
 & \multicolumn{1}{c|}{4} & 4.44 & 1.62 & 4.77 & 8.52 & \textbf{80.64} \\
 \end{tabular}
-\caption{Confusion matrix obtained with my model for 11 scans taken from the BraTS 2015 dataset. The percentage of correctly predicted voxels for each class is shown.}
+\caption[Confusion matrix obtained with my model on 11 scans taken from the BraTS 2015 dataset.]{Confusion matrix obtained with my model on 11 scans taken from the BraTS 2015 dataset. The percentage of correctly predicted voxels for each class is shown.}
 \label{table:confusion_my_model}
 \end{table}
 
 \section{Comparison}
 \subsection{Performance}
-Table \ref{table:comparison} shows the results I obtained using my implementations along to those reported in Pereira's paper on the BraTS2013 Challenge dataset. My implementation of the model proposed by Pereira et al.\ with adam optimisation has the highest Dice score for the `Complete' region and therefore improves on the results reported by Pereira for this particular region. However, the Dice scores for the `Core' and the `Enhancing' regions are lower than those reported by Pereira, as explained previously. My fully-convolutional architecture has lower Dice scores but obtains the highest positive predictive value on all 3 regions. This suggest that this model could further be improved by attempting to trade-off some positive predictive value for sensitivity to obtain higher dice scores. 
+Table \ref{table:comparison} shows the results I obtained using my implementations along to those reported in Pereira's paper on the BraTS2013 Challenge dataset. My implementation of the model proposed by Pereira with adam optimisation has the highest Dice score for the `Complete' region and therefore improves on the results reported by Pereira for this particular region. However, the Dice scores for the `Core' and the `Enhancing' regions are lower than those reported by Pereira, as explained previously. My fully-convolutional architecture has lower Dice scores but obtains the highest positive predictive value on all 3 regions. This suggest that this model could further be improved by attempting to trade-off some positive predictive value for sensitivity to obtain higher dice scores. 
 
 \begin{table}[h]
 \centering	
@@ -1266,22 +1234,24 @@ Method & Time to segment a scan (in seconds)\\
  My FCN model & 110.47 \\
  My Pereira impl.\ & 802.82 \\
 \end{tabular}
-\caption{Comparison of the time required for segmenting a scan of $155 \times 240 \times 240$ voxels for my implementation of the model proposed by Pereira and my fully-convolutional model.}
+\caption[Comparison of the time required for segmenting a scan of $155 \times 240 \times 240$ voxels.]{Comparison of the time required for segmenting a scan of $155 \times 240 \times 240$ voxels for my implementation of the model proposed by Pereira and my fully-convolutional model.}
 \label{table:time_comparison}
 \end{table}
 
 \chapter{Conclusion}
 \section{Summary of achievements}
-This project surveyed the mathematical foundations of deep learning with convolutional neural networks and how these models can be applied to the problem of brain tumour segmentation. I implemented two different convolutional neural networks. First, I replicated the model proposed by Pereira et al.\ \cite{pereira}. This gave me an introduction to this field with some certainty that the model would work. I then designed a second model using techniques more recently developed for the design of convolutional neural networks. The model I built is performing similarly, but has the significant advantage of being able to segment a scan up to 7 times faster. This speed-up is achieved by removing all fully-connected layers from the network. This also has the effect of reducing the number of parameters, which makes my convolutional neural networks able to consider an input patch with 4 times more voxels while keeping the number of parameters similar. Both models were trained on the data made available through the BraTS2013 challenge.
+This project surveyed the mathematical foundations of deep learning with convolutional neural networks and how these models can be applied to the problem of brain tumour segmentation. I implemented two different convolutional neural networks. First, I replicated the model proposed by Pereira et al.\ \cite{pereira}. This provided a good starting point in this field with some certainty that the model would work. The model I implemented performed better in the `Complete' region than Pereira's model, but performed worse in the `Core' and `Enhancing region, obtaining respective average Dice scores of (0.82, 0.67, 0.53) for the BraTS2013 \cite{brats-proceedings} challenge. I then designed a second model using techniques more recently developed for the design of convolutional neural networks. The model I built is performing similarly, but has the significant advantage of being able to segment a scan up to 7 times faster. This speed-up is achieved by removing all fully-connected layers from the network. This also has the effect of reducing the number of parameters, which makes my convolutional neural networks able to consider an input patch with 4 times more voxels, while keeping the number of parameters similar. Both models were trained on the data made available through the BraTS2013 challenge.
 
 I evaluated both models using the standard metrics for this segmentation task: Dice score, positive predictive value and sensitivity. I also compared the performance of my models to the performance of models published by researchers in the field using the BraTS challenge leaderboard. Using the data from the BraTS 2015 dataset, I was further able to get more insight in how well the different models perform by examining the confusion matrix for this dataset.
 
-Both models approximated the performance obtained by recent state-of-the-art methods for the `Complete' region, but not for the `Core' or `Enhancing' regions. Especially noticeable is the difference in the Dice score for the `Enhancing' tumour region between my implementation of the model proposed  by Pereira et al. and their published results. After emailing the author, I was able to confirm that the only difference in the two implementations was the heuristic for selecting which patches to train the network on, which was not specified in the published paper by Pereira. Hence, if I had to do it again, I would probably choose to replicate a more detailed paper or a paper for which the source code is available. This difference in results also shows the importance of the quality of the input data for deep learning methods, which often is more important than the architectural details of the network. Interestingly, increasing the receptive field of the neural network to a larger patch surrounding the voxels to be classified did not significantly increase the performance of the network. This indicates that the class of a voxel is highly dependent on the surrounding voxels, but not on those voxels slightly further apart.
+Both models approximated the performance obtained by recent state-of-the-art methods for the `Complete' region, but not for the `Core' or `Enhancing' regions. Especially noticeable is the difference in the Dice score for the `Enhancing' tumour region between my implementation of the model proposed  by Pereira et al. and their published results. After emailing the author, I was able to confirm that the only difference in the two implementations were the heuristics used for selecting the training patches, which were not specified in the paper published by Pereira. Hence, if I had to do this project again, I would choose to replicate a more detailed paper or a paper for which the source code is available. This difference in results also shows the importance of the quality of the input data for deep learning methods, which is often more important than the architectural details of the network. Interestingly, increasing the receptive field of the neural network to a larger patch surrounding the voxels to be classified did not significantly increase the performance of the network. This indicates that the class of a voxel is highly dependent on the surrounding voxels, but not on those voxels slightly further apart.
 
 \section{Future work}
-A likely future direction is to use three-dimensional patches instead of being restricted to two-dimensional patches. Incorporating the third dimension is challenging in convolutional neural networks due to the exponential growth in parameters associated with it. However, some very recent approaches have overcome these difficulties and use three-dimensional patches to achieve state-of-the-art results \cite{kamnitsas}. 
+A likely future direction is to use three-dimensional patches, instead of being restricted to two-dimensional patches. Incorporating the third dimension is challenging in convolutional neural networks due to the exponential growth in parameters associated with it. However, some very recent approaches have overcome these difficulties and use \mbox{three-dimensional} patches to achieve state-of-the-art results \cite{kamnitas}. 
 
 A further likely future direction concerns the fact that convolutional neural networks are not able to give any measure of uncertainty for their predictions, which might be very important for life-or-death cases such as brain tumours. Some recent work by Gal and Ghahramani showed how it is possible to get such uncertainty bounds in convolutional neural networks using Dropout \cite{Gal2015Dropout}. It would be interesting to research how this new knowledge could be incorporated into models for brain tumour segmentation.
+
+%TC:ignore
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % the bibliography
@@ -1300,9 +1270,53 @@ A further likely future direction concerns the fact that convolutional neural ne
 %\section{proposal.tex}
 %{\scriptsize\verbatiminput{proposal.tex}}
 
+\chapter{Dropout}
+\label{appendix:dropout}
+A more recent technique, developed for deep neural networks is Dropout \cite{dropout}. When Dropout is used, the network randomly drops some neurons during the training phase. This forces the network to distribute the computation on all neurons evenly, which prevents the network from overfitting. The computation done by a single neuron thus becomes
+\begin{equation}
+\begin{split}
+	\textbf{r} & \sim \text{Bernoulli}_n(p) \\
+	y & = f_{act}((\sum_{i=1}^{n} r_i y_i w_i) + b)
+\end{split}
+\end{equation}
+where $\textbf{r}$ is a vector of $n$ independent Bernoulli random variables each with parameter $p$, that is $P(r_i = 1) = p$ and $P(r_i = 0) = 1 - p$ for each $r_i$. This is done at every layer and therefore amounts to sampling a sub-network from a larger network. 
+
+At test time dropout is not applied. Thus, the network weights have to be scaled by a factor $p$ to compensate for the extra inputs at each layer. The back-propagation algorithm remains unchanged for the sub-network and can therefore be applied in the learning phase.
+
+In practice, it is common to apply Dropout only to the fully connected layers and not to the convolutional layers, as it has been shown to produce better results. As I will show later, this is also what was done by Pereira \cite{pereira}.
+
+\chapter{Batch normalisation}
+\label{appendix:batch_normalisation}
+The key realisation behind the batch normalisation algorithm \cite{batch_normalization} is that the distribution of the inputs to each layer of the network changes as the weights are changed. This phenomenon is called \textit{internal covariance shift}. The training of the neural network is slowed down by this because each layer has to continuously adapt to this change in the distribution of its inputs. By fixing the distribution of these inputs, the network is able to learn faster and is less prone to overfitting. Similarly to how the inputs to the network are often normalised to have mean 0 and variance 1, it would be beneficial to ensure that the input vector $\textbf{x}$ to each layer has mean 0 and variance 1. 
+
+To make this efficient and differentiable, which is required for the minimisation of the loss function, each individual dimension of the input vector $\textbf{x}^{(k)}$ is normalised using the mean and standard deviation of the training mini-batch. In the same way as the mini-batch is used as an approximation to calculate the gradient of the loss function on the entire training set, the mini-batch is used to approximate the mean and variance of the entire training set at different layers in the network. However, just normalising each input of a layer might restrict which functions the layer is able to represent. The output is therefore linearly scaled by $\gamma$ and shifted by $\beta$, parameters that can be learned along with the weights. This ensures that the introduced transformation is able to represent the identity transformation, if that is the optimal thing to do. The Batch Normalisation transformation computes:
+\begin{equation}
+\begin{split}
+	\mu_{\mathbb{B}}  & = \frac{1}{m}\sum_{i=1}^m x^{(k)}_i \\	
+	\sigma^2_{\mathbb{B}}  & = \frac{1}{m}\sum_{i=1}^m (x^{(k)}_i - \mu_{\mathbb{B}})^2 \\	
+	\hat{x}^{(k)}_i & = \cfrac{x^{(k)}_i - \mu_{\mathbb{B}}}{\sqrt{\sigma^2_{\mathbb{B}} + \epsilon}} \\
+	\textrm{BN}_{\gamma, \beta}(x^{(k)}_i) & = \gamma \hat{x}^{(k)}_i + \beta
+\end{split}
+\end{equation}
+where $\mathbb{B}$ is a mini-batch of size $m$, $\mathbb{B} = \{ \textbf{x}_1, ... , \textbf{x}_m \}$ and $\epsilon$ is a numerical constant added to increase numerical stability.
+In convolutional neural networks, the Batch Normalisation transformation is applied just before the activation function. The output computed by each neuron therefore becomes
+\begin{equation}
+		y = f_{act}(\textrm{BN}_{\gamma, \beta}(\sum_{i=1}^{n} y_i w_i))
+\end{equation}
+where the Batch Normalisation transformation is applied to each dimension individually. Notice that since the parameter $\beta$ is added, the bias weight $b$ is made redundant. The testing phase has to be modified accordingly, the details of which can be found in \cite{batch_normalization}.
+
+\chapter[Implementation of the model proposed by Pereira]{Python implementation of the model proposed by Pereira with Keras}
+\label{appendix:pereira_model}
+
+\lstinputlisting[language=Python]{../work/model/model.py}
+
+\chapter{Python implementation of my model with Keras}
+\label{appendix:my_model}
+\lstinputlisting[language=Python]{../work/model/fcn_model.py}
 
 \chapter{Project Proposal}
 
 \input{proposal}
+%TC:endignore
 
 \end{document}
