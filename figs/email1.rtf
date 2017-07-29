@@ -1,0 +1,79 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1504\cocoasubrtf820
+{\fonttbl\f0\fnil\fcharset0 HelveticaNeue;\f1\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;\red0\green0\blue0;\red9\green80\blue208;
+}
+{\*\expandedcolortbl;;\csgray\c0;\cssrgb\c0\c0\c0;\cssrgb\c0\c41176\c85098;
+}
+{\*\listtable{\list\listtemplateid1\listhybrid{\listlevel\levelnfc0\levelnfcn0\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{decimal\}.}{\leveltext\leveltemplateid1\'02\'00.;}{\levelnumbers\'01;}\fi-360\li720\lin720 }{\listname ;}\listid1}}
+{\*\listoverridetable{\listoverride\listid1\listoverridecount0\ls1}}
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf2 From: S\'e9rgio Pereira <pereirasrm@gmail.com>\
+Subject: Re: Replication of BraTS paper using ConvNets\
+Date: 22 March 2017 at 10:32:53 GMT\
+To: Sebastian Borgeaud <spb61@cam.ac.uk>\
+Cc: Duo Wang <wd263@cam.ac.uk>, Mateja Jamnik <mj201@cam.ac.uk>\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f1 \cf2 \
+\pard\pardeftab720\sl280\partightenfactor0
+\cf3 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 Hi Sebastian!\
+\
+First of all, thanks for your interest in our work.\
+\
+1) No. For the results obtained with BRATS Challenge 2013 I trained on the BRATS 2013 Training data. Note that the manual segmentation were obtained differently in BRATS 2013 and BRATS 2015. In 2013 it was obtained by fusing the manual annotation of experts. But, for 2015 the organizers fused the segmentations obtained by top performing automatic segmentation methods. When I look at both, they look different to me, even for the same subjects. This can be one of the reasons. Note also that we have a CNN for HGG and another for LGG.\
+\
+2) In [19] the authors applied N4ITK to the T2 and FLAIR sequences also. In any case, the difference is still large. Maybe it's a matter of N4ITK parameters. After publishing the paper, another contestant of BRATS told me that he did not use N4 because it kind of "erased" some tumors when he tried it. Anyway, I used N4ITK through the Nipype package with the following parameters:\
+\
+from nipype.interfaces.ants import N4BiasFieldCorrection\
+n4 = N4BiasFieldCorrection()\
+n4.inputs.n_iterations = [20, 20, 20, 10]\
+n4.inputs.dimension = 3\
+n4.inputs.bspline_fitting_distance = 200\
+n4.inputs.shrink_factor = 2\
+n4.inputs.convergence_threshold = 0\
+\
+maybe you can try this parameters in the implementation that you are using.\
+\
+3) Yes. After we extract all patches we had around 40% of normal tissues and the remaining approximately balanced among the tumor classes.\'a0 We also tried to avoid to extract patches that were too close to each other (around 3 voxels apart). Also, we enforced that around 30% of the normal tissues patches should be close to the tumor itself. However, I am afraid that I cannot guarantee that this\'a0\
+had a big impact, since I had no time to validate at the time. In my more recent approaches it did not impact much.\
+\
+Hope this helps.\
+\
+Cheers,\
+S\'e9rgio\
+\
+\
+2017-03-22 8:28 GMT+00:00 Sebastian Borgeaud \uc0\u8234 <{\field{\*\fldinst{HYPERLINK "mailto:spb61@cam.ac.uk"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 spb61@cam.ac.uk}}>\uc0\u8236 :\
+Dear Mr. Pereira,\'a0\
+\
+As part of my Bachelor thesis on brain tumour segmentations I am trying to replicate the method you published in \'93Brain Tumor Segmentation Using Convolutional Neural Networks in MRI Image\'94. For my thesis I have decided to not use the Nyul normalization and instead only use the N4ITK for time and scope reasons. I then trained an identical convolutional neural network to the one published using Keras.\'a0\
+\
+Unfortunately, I am only able to replicate the dice score for the Complete region in the Challenge dataset, obtaining dice scores of (0.80, 0.69, 0.50) compared to (0.8, 0.78, 0.73).\'a0\
+\
+As my network architecture is the same as the one reported in your paper and the training is done identically (SGD with Nesterov momentum over 20 epochs with a linear decrease in learning rate from 3e-5 to 3e-7). I believe that the difference must come from one of:\'a0\
+\pard\tx220\tx720\pardeftab720\sl280\partightenfactor0
+\ls1\ilvl0\cf3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	1.	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 Data source\
+\ls1\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	2.	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 Pre-processing\
+\ls1\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	3.	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 How the patches are extracted\
+\pard\pardeftab720\sl280\partightenfactor0
+\cf3 \
+1) For the training data I used the BraTS 2015 version of the 2013 data, as all scans have the same dimensions. However, for the segmentation I had to use the Challenge dataset from the 2013BraTS challenge, as I couldn\'92t find the data in the 2015 dataset. Did you have to do the same?\'a0\
+\
+2) For the pre-processing, I first winsorize the top and bottom1% of each scan and then perform the N4ITK normalisation on the T1 and T1c scans. Each scan is then linearly transformed to the range [0,1] and finally normalised to mean 0 and variance 1.\'a0\
+\
+3) For the patch extraction I randomly select 90,000 patches for each class. In the paper you mention that the frequency of the different classes isn\'92t exactly the same, with about 40% from class 0? I have tried to do that but it didn\'92t improve the results.\
+\
+I would really appreciate it if you could take a moment to verify what I am doing different/wrong.\'a0\
+\
+Many thanks,\'a0\
+\
+Sebastian Borgeaud\'a0\
+\
+(Undergraduate student in Computer Science at the University of Cambridge)\
+\
+}
